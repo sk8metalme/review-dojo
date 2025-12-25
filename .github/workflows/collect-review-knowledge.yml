@@ -1,0 +1,204 @@
+name: Collect Review Knowledge
+
+on:
+  repository_dispatch:
+    types: [pr-merged]
+  workflow_dispatch:
+    inputs:
+      pr_url:
+        description: 'PR URL to analyze'
+        required: true
+      repo_owner:
+        description: 'Repository owner'
+        required: true
+      repo_name:
+        description: 'Repository name'
+        required: true
+      pr_number:
+        description: 'PR number'
+        required: true
+
+# 同時実行制御：直列化
+concurrency:
+  group: knowledge-collection
+  cancel-in-progress: false
+
+jobs:
+  collect-knowledge:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout knowledge repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.KNOWLEDGE_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Claude Code CLI
+        run: |
+          # Claude Code CLIのインストール
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Extract PR information
+        id: pr-info
+        run: |
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            echo "PR_URL=${{ github.event.client_payload.pr_url }}" >> $GITHUB_OUTPUT
+            echo "REPO_OWNER=${{ github.event.client_payload.repo_owner }}" >> $GITHUB_OUTPUT
+            echo "REPO_NAME=${{ github.event.client_payload.repo_name }}" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${{ github.event.client_payload.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "PR_URL=${{ github.event.inputs.pr_url }}" >> $GITHUB_OUTPUT
+            echo "REPO_OWNER=${{ github.event.inputs.repo_owner }}" >> $GITHUB_OUTPUT
+            echo "REPO_NAME=${{ github.event.inputs.repo_name }}" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check repository visibility
+        id: repo-check
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # リポジトリがpublicかどうかを確認
+          VISIBILITY=$(gh api repos/${{ steps.pr-info.outputs.REPO_OWNER }}/${{ steps.pr-info.outputs.REPO_NAME }} --jq '.private')
+
+          if [ "$VISIBILITY" == "true" ]; then
+            echo "Private repository detected. Skipping knowledge collection."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Public repository. Proceeding with knowledge collection."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for resolved review comments
+        if: steps.repo-check.outputs.skip == 'false'
+        id: comment-check
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # PRのレビュースレッドを取得し、resolvedのものをカウント
+          RESOLVED_COUNT=$(gh api graphql -f query='
+            query($owner: String!, $repo: String!, $number: Int!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequest(number: $number) {
+                  reviewThreads(first: 100) {
+                    nodes {
+                      isResolved
+                      comments(first: 1) {
+                        nodes {
+                          body
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ' -f owner=${{ steps.pr-info.outputs.REPO_OWNER }} \
+            -f repo=${{ steps.pr-info.outputs.REPO_NAME }} \
+            -F number=${{ steps.pr-info.outputs.PR_NUMBER }} \
+            --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == true)] | length')
+
+          echo "Found $RESOLVED_COUNT resolved threads"
+
+          if [ "$RESOLVED_COUNT" -lt "1" ]; then
+            echo "No resolved threads. Skipping knowledge collection."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Proceeding with $RESOLVED_COUNT resolved threads."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Collect knowledge with Claude Code
+        if: steps.repo-check.outputs.skip == 'false' && steps.comment-check.outputs.skip == 'false'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ steps.pr-info.outputs.PR_URL }}
+          REPO_OWNER: ${{ steps.pr-info.outputs.REPO_OWNER }}
+          REPO_NAME: ${{ steps.pr-info.outputs.REPO_NAME }}
+          PR_NUMBER: ${{ steps.pr-info.outputs.PR_NUMBER }}
+        run: |
+          # Claude Code CLIでプロンプトを実行（リトライあり）
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          RETRY_DELAY=5
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if claude -p "$(cat scripts/collect-knowledge.md)" \
+              --allowedTools "Bash(gh:*),Read,Write,Edit" \
+              --output-format text; then
+              echo "Knowledge collection successful"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "Retry $RETRY_COUNT/$MAX_RETRIES after ${RETRY_DELAY}s..."
+                sleep $RETRY_DELAY
+                RETRY_DELAY=$((RETRY_DELAY * 3))  # 指数バックオフ
+              else
+                echo "Failed after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Apply knowledge to markdown files
+        if: steps.repo-check.outputs.skip == 'false' && steps.comment-check.outputs.skip == 'false'
+        run: |
+          if [ -f knowledge.json ]; then
+            node scripts/apply-knowledge.js knowledge.json
+          else
+            echo "No knowledge.json generated. Skipping."
+            exit 0
+          fi
+
+      - name: Commit and push changes
+        if: steps.repo-check.outputs.skip == 'false' && steps.comment-check.outputs.skip == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 変更があるかチェック
+          if git diff --quiet && git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git add security/ performance/ readability/ design/ testing/ error-handling/ other/ archive/
+
+          git commit -m "$(cat <<'EOF'
+          Add knowledge from ${{ steps.pr-info.outputs.PR_URL }}
+
+          🤖 Collected review knowledge from PR #${{ steps.pr-info.outputs.PR_NUMBER }} in ${{ steps.pr-info.outputs.REPO_OWNER }}/${{ steps.pr-info.outputs.REPO_NAME }}
+          EOF
+          )"
+
+          git push
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f knowledge.json
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ steps.repo-check.outputs.skip }}" == "true" ]; then
+            echo "::notice::Skipped private repository"
+          elif [ "${{ steps.comment-check.outputs.skip }}" == "true" ]; then
+            echo "::notice::Skipped: No resolved review threads"
+          elif [ -f knowledge.json ]; then
+            echo "::notice::Successfully collected and applied knowledge"
+          else
+            echo "::warning::No knowledge collected from this PR"
+          fi
