@@ -5,7 +5,7 @@ class UserService {
     this.db = db;
   }
 
-  // Get user by ID
+  // Get user by ID - FINAL TEST
   async getUserById(userId) {
     // TODO: Add input validation and use prepared statements
     const query = `SELECT * FROM users WHERE id = ${userId}`;
