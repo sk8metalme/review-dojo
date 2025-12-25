@@ -20,6 +20,7 @@ class UserService {
   }
 
   // PERFORMANCE ISSUE: N+1 query problem
+  // TODO: Use JOIN or IN clause to fetch in single query
   async getUsersWithPosts() {
     const users = await this.db.query('SELECT * FROM users');
 
