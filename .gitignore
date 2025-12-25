@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Test coverage
+coverage/
+
+# Temporary files
+*.log
+*.tmp
+knowledge.json
+sample-knowledge.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

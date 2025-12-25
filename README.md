@@ -211,24 +211,3 @@ MIT
 ## 参考
 
 詳細な設計書は [plan.md](./plan.md) を参照してください。
-
-## Knowledge Collection Test
-
-このセクションは知見収集ワークフローのテスト用に追加されました。
-
-### Test 2
-package-lock.json追加後の再テスト
-# Test PR 7
-# Test PR 8 - Final Verification
-
-
-## Purpose
-
-Final verification that knowledge files are properly committed to the repository.
-
-## Changes
-
-- Updated git add to use -A flag to include new directories
-
-# Test PR 9 - Verify git add order fix
-# Test PR 10 - Final git add fix

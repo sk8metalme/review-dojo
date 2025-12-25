@@ -5,22 +5,20 @@ class UserService {
     this.db = db;
   }
 
-  // Get user by ID - FINAL TEST
+  // Get user by ID
   async getUserById(userId) {
-    // TODO: Add input validation and use prepared statements
+    // TODO: Add input validation
     const query = `SELECT * FROM users WHERE id = ${userId}`;
     return await this.db.query(query);
   }
 
   // SECURITY ISSUE: Storing password in plain text
-  // TODO: Implement password hashing with bcrypt
   async createUser(username, password) {
     const query = `INSERT INTO users (username, password) VALUES ('${username}', '${password}')`;
     return await this.db.query(query);
   }
 
   // PERFORMANCE ISSUE: N+1 query problem
-  // TODO: Use JOIN or IN clause to fetch in single query
   async getUsersWithPosts() {
     const users = await this.db.query('SELECT * FROM users');
 
