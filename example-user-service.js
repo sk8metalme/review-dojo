@@ -5,8 +5,9 @@ class UserService {
     this.db = db;
   }
 
-  // SECURITY ISSUE: SQL Injection vulnerability
+  // Get user by ID
   async getUserById(userId) {
+    // TODO: Add input validation
     const query = `SELECT * FROM users WHERE id = ${userId}`;
     return await this.db.query(query);
   }
