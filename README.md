@@ -215,3 +215,6 @@ MIT
 ## Knowledge Collection Test
 
 このセクションは知見収集ワークフローのテスト用に追加されました。
+
+### Test 2
+package-lock.json追加後の再テスト
