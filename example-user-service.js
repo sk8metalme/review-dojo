@@ -13,6 +13,7 @@ class UserService {
   }
 
   // SECURITY ISSUE: Storing password in plain text
+  // TODO: Implement password hashing with bcrypt
   async createUser(username, password) {
     const query = `INSERT INTO users (username, password) VALUES ('${username}', '${password}')`;
     return await this.db.query(query);
