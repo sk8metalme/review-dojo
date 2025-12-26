@@ -1,6 +1,6 @@
 {
   "scan_date": "2025-12-26T01:30:00+09:00",
-  "remediation_date": "2025-12-26T01:54:00+09:00",
+  "remediation_date": "2025-12-26T10:31:00+09:00",
   "branch": "test/final-git-add-fix",
   "total_vulnerabilities": 10,
   "fixed": 10,
@@ -60,10 +60,10 @@
       "id": "SEC-006",
       "title": "依存関係の脆弱性（esbuild）",
       "severity": "medium",
-      "status": "acknowledged",
+      "status": "fixed",
       "location": "package.json (devDependencies)",
       "cve": "GHSA-67mh-4wv8-2f99",
-      "note": "devDependenciesのみ。本番環境には影響なし。破壊的変更が必要なため、将来のメジャーアップデート時に対応予定"
+      "fix": "vitest v4.0.16にアップグレード（esbuild >=0.25.0を含む）"
     },
     "SEC-007": {
       "id": "SEC-007",
