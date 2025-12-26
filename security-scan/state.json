@@ -1,0 +1,110 @@
+{
+  "scan_date": "2025-12-26T01:30:00+09:00",
+  "remediation_date": "2025-12-26T10:31:00+09:00",
+  "branch": "test/final-git-add-fix",
+  "total_vulnerabilities": 10,
+  "fixed": 10,
+  "by_severity": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "vulnerabilities": {
+    "SEC-001": {
+      "id": "SEC-001",
+      "title": "パストラバーサル脆弱性",
+      "severity": "critical",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:39-65",
+      "cwe": "CWE-22",
+      "fix": "sanitizePath関数を実装、パス検証を追加"
+    },
+    "SEC-002": {
+      "id": "SEC-002",
+      "title": "入力検証の不足",
+      "severity": "high",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:317-341",
+      "cwe": "CWE-20",
+      "fix": "JSONパース前の検証、サイズ制限、スキーマ検証を追加"
+    },
+    "SEC-003": {
+      "id": "SEC-003",
+      "title": "機密情報マスクの不完全性",
+      "severity": "high",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:14-22",
+      "cwe": "CWE-200",
+      "fix": "GitHub Token, JWT, Private Key等の包括的パターンを追加"
+    },
+    "SEC-004": {
+      "id": "SEC-004",
+      "title": "ReDoS脆弱性の可能性",
+      "severity": "medium",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:21",
+      "cwe": "CWE-1333",
+      "fix": "正規表現に上限{20,100}を追加"
+    },
+    "SEC-005": {
+      "id": "SEC-005",
+      "title": "エラーハンドリングの不足",
+      "severity": "medium",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js (全体)",
+      "cwe": "CWE-703",
+      "fix": "包括的なtry-catchとエラーログを追加"
+    },
+    "SEC-006": {
+      "id": "SEC-006",
+      "title": "依存関係の脆弱性（esbuild）",
+      "severity": "medium",
+      "status": "fixed",
+      "location": "package.json (devDependencies)",
+      "cve": "GHSA-67mh-4wv8-2f99",
+      "fix": "vitest v4.0.16にアップグレード（esbuild >=0.25.0を含む）"
+    },
+    "SEC-007": {
+      "id": "SEC-007",
+      "title": "ファイル処理の非効率性とDoSリスク",
+      "severity": "medium",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:373-389",
+      "cwe": "CWE-400",
+      "fix": "並列処理制限（10並列）を実装"
+    },
+    "SEC-008": {
+      "id": "SEC-008",
+      "title": "アーカイブファイルの無制限増加",
+      "severity": "medium",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:277-286",
+      "cwe": "CWE-770",
+      "fix": "アーカイブファイルのサイズ制限とローテーション機能を追加"
+    },
+    "SEC-009": {
+      "id": "SEC-009",
+      "title": "マジックナンバー（セキュリティ設定）",
+      "severity": "low",
+      "status": "fixed",
+      "location": "scripts/apply-knowledge.js:26-34",
+      "cwe": "CWE-547",
+      "fix": "定数化（KNOWLEDGE_LIMIT, ARCHIVE_SIZE_LIMIT等）"
+    },
+    "SEC-010": {
+      "id": "SEC-010",
+      "title": "テストカバレッジの不足（セキュリティ機能）",
+      "severity": "low",
+      "status": "fixed",
+      "location": "tests/apply-knowledge.test.js",
+      "fix": "sanitizePath, maskSensitiveInfoのセキュリティテストを追加（21テスト全てパス）"
+    }
+  },
+  "test_results": {
+    "total_tests": 21,
+    "passed": 21,
+    "failed": 0,
+    "coverage_goal": "95%"
+  }
+}

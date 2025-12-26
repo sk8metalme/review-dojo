@@ -1,0 +1,25 @@
+{
+  "name": "review-knowledge-system",
+  "version": "1.1.0",
+  "description": "PR Review Knowledge Collection and Management System",
+  "type": "module",
+  "main": "scripts/apply-knowledge.js",
+  "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  },
+  "keywords": [
+    "github",
+    "pr",
+    "review",
+    "knowledge",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/ui": "^4.0.16",
+    "vitest": "^4.0.16"
+  }
+}
