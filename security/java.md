@@ -17,6 +17,6 @@
   ```
 - **対象ファイル例**: `src/main/java/com/example/UserDao.java`
 - **参照PR**:
-  - https://github.com/org/repo/pull/123
+  - https://github.com/sk8metalme/review-dojo/pull/11
 
 ---

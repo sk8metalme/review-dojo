@@ -18,14 +18,8 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "remark": "^15.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-stringify": "^11.0.0",
-    "unified": "^11.0.4"
-  },
   "devDependencies": {
-    "@vitest/ui": "^1.1.0",
-    "vitest": "^1.1.0"
+    "@vitest/ui": "^4.0.16",
+    "vitest": "^4.0.16"
   }
 }
