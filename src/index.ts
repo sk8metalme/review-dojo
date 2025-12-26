@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { fileURLToPath } from 'node:url';
 import { ApplyKnowledgeCli } from './interfaces/cli/ApplyKnowledgeCli.js';
 
 /**
@@ -12,6 +13,6 @@ async function main() {
 }
 
 // スクリプトとして実行された場合
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main();
 }

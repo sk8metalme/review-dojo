@@ -76,13 +76,17 @@ export class KnowledgeFile {
     // 発生回数でソート（降順）
     this.items.sort((a, b) => b.getOccurrences() - a.getOccurrences());
 
-    // 超過分を削除
-    const archivedCount = this.items.length - KnowledgeFile.MAX_ITEMS;
+    // 超過分をアーカイブ対象として取得
+    const archivedItems = this.items.slice(KnowledgeFile.MAX_ITEMS);
+    const archivedCount = archivedItems.length;
+
+    // アイテムを削除
     this.items.splice(KnowledgeFile.MAX_ITEMS);
 
     // アーカイブイベントを発行
     this.events.push(
       new KnowledgeArchivedEvent(
+        archivedItems,
         archivedCount,
         this.category.getValue(),
         this.language.getValue()

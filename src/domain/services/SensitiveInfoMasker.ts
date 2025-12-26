@@ -47,8 +47,10 @@ export class SensitiveInfoMasker {
     },
     {
       name: 'API Key',
-      pattern: /[a-zA-Z0-9_-]{20,100}/g,
-      replacement: '***REDACTED***'
+      // Match common API key formats with prefixes to avoid false positives
+      // Examples: api_key_xxx, apikey=xxx, API-KEY: xxx, API key: xxx
+      pattern: /(api[_\s-]?key|secret[_\s-]?key|access[_\s-]?key)\s*[:=]\s*[a-zA-Z0-9_-]{16,}/gi,
+      replacement: '$1: ***REDACTED***'
     }
   ];
 

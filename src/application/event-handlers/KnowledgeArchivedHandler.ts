@@ -14,10 +14,7 @@ export class KnowledgeArchivedHandler {
   /**
    * アーカイブイベントを処理
    */
-  async handle(
-    event: KnowledgeArchivedEvent,
-    archivedItems: readonly KnowledgeItem[]
-  ): Promise<void> {
+  async handle(event: KnowledgeArchivedEvent): Promise<void> {
     const category = Category.fromString(event.category);
     const language = Language.fromString(event.language);
 
@@ -26,8 +23,8 @@ export class KnowledgeArchivedHandler {
     );
 
     // アーカイブファイルに保存
-    await this.repository.archive(category, language, archivedItems);
+    await this.repository.archive(category, language, event.archivedItems);
 
-    console.log(`Archived ${archivedItems.length} items successfully`);
+    console.log(`Archived ${event.archivedItems.length} items successfully`);
   }
 }

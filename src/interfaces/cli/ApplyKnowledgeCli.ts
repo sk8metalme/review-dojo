@@ -3,7 +3,8 @@ import { ApplyKnowledgeUseCase } from '../../application/use-cases/ApplyKnowledg
 import { FileSystemKnowledgeRepository } from '../../infrastructure/repositories/FileSystemKnowledgeRepository.js';
 import { MarkdownSerializer } from '../../infrastructure/serializers/MarkdownSerializer.js';
 import { ExactTitleMatcher } from '../../domain/services/matchers/ExactTitleMatcher.js';
-import { PathComponent } from '../../domain/value-objects/PathComponent.js';
+import { Category } from '../../domain/value-objects/Category.js';
+import { Language } from '../../domain/value-objects/Language.js';
 
 /**
  * CLI Entry Point
@@ -108,7 +109,7 @@ export class ApplyKnowledgeCli {
   }
 
   /**
-   * カテゴリ・言語ごとにグループ化（パス検証付き）
+   * カテゴリ・言語ごとにグループ化（ドメインルール検証付き）
    */
   private groupByCategory(items: any[]): Record<string, any[]> {
     const grouped: Record<string, any[]> = {};
@@ -120,18 +121,18 @@ export class ApplyKnowledgeCli {
         continue;
       }
 
-      // パス検証
+      // ドメインルールによる早期検証
       try {
-        const category = PathComponent.create(item.category);
-        const language = PathComponent.create(item.language);
+        const category = Category.fromString(item.category);
+        const language = Language.fromString(item.language);
         const key = `${category.getValue()}/${language.getValue()}`;
 
         if (!grouped[key]) {
           grouped[key] = [];
         }
         grouped[key].push(item);
-      } catch (sanitizeError: any) {
-        console.warn(`Skipping item: ${sanitizeError.message}`);
+      } catch (validationError: any) {
+        console.warn(`Skipping item with invalid category/language: ${validationError.message}`);
       }
     }
 

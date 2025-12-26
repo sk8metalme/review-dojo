@@ -49,18 +49,10 @@ export class ApplyKnowledgeUseCase {
       knowledgeFile.addKnowledge(item);
     }
 
-    // ドメインイベントを処理（アーカイブイベント）
-    const events = knowledgeFile.getUncommittedEvents();
-    for (const event of events) {
-      if (event.eventType === 'KnowledgeArchived') {
-        // アーカイブ処理は別のハンドラで行う想定
-        // ここでは単にログ出力
-        console.log(
-          `Knowledge archived: ${event.eventType} -`,
-          JSON.stringify(event)
-        );
-      }
-    }
+    // ドメインイベントを処理
+    // Note: KnowledgeArchived, KnowledgeAdded, KnowledgeMerged イベントは
+    // 現在はログ記録のみで、将来的にイベントハンドラーで処理する想定
+    knowledgeFile.getUncommittedEvents();
 
     // 知見を保存
     await this.repository.save(category, language, knowledgeFile.getItems());

@@ -130,9 +130,9 @@ export class MarkdownSerializer implements IMarkdownSerializer {
       pr_url: references[0] // 最初のPR URLを使用
     });
 
-    // 発生回数が2以上の場合は追加でマージ
-    const occurrences = occurrencesMatch ? parseInt(occurrencesMatch[1]) : 1;
-    for (let i = 1; i < occurrences; i++) {
+    // 参照PRが複数ある場合は追加でマージ
+    // 発生回数はcreate時に1なので、残りの参照PRをマージ
+    for (let i = 1; i < references.length; i++) {
       item.merge({ pr_url: references[i] });
     }
 

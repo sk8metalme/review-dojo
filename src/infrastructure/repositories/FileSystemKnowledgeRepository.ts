@@ -91,12 +91,12 @@ export class FileSystemKnowledgeRepository implements IKnowledgeRepository {
 
         // 新しいアーカイブファイルを開始
         const categoryName = this.capitalize(category.getValue());
-        const languageName = this.capitalize(language.getValue().replace('.md', ''));
+        const languageName = this.capitalize(language.getValue());
         archiveContent = `# Archive: ${categoryName} - ${languageName}\n\n`;
       }
     } else {
       const categoryName = this.capitalize(category.getValue());
-      const languageName = this.capitalize(language.getValue().replace('.md', ''));
+      const languageName = this.capitalize(language.getValue());
       archiveContent = `# Archive: ${categoryName} - ${languageName}\n\n`;
     }
 
