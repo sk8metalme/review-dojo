@@ -112,8 +112,17 @@ review-dojo/
 │   ├── collect-review-knowledge.yml    # メイン収集ワークフロー
 │   └── trigger-knowledge-collection.yml # 各リポジトリ配置用
 ├── scripts/
-│   ├── collect-knowledge.md            # Claude Code用プロンプト
-│   └── apply-knowledge.js              # 知見適用スクリプト
+│   └── collect-knowledge.md            # Claude Code用プロンプト
+├── src/                # TypeScript ソースコード（オニオンアーキテクチャ）
+│   ├── domain/         # ドメイン層（ビジネスロジック）
+│   ├── application/    # アプリケーション層（ユースケース）
+│   ├── infrastructure/ # インフラ層（ファイルI/O、シリアライズ）
+│   └── interfaces/     # インターフェース層（CLI）
+├── dist/               # ビルド出力（src/のコンパイル結果）
+├── tests/              # テストコード
+│   ├── domain/         # ドメイン層のテスト
+│   ├── infrastructure/ # インフラ層のテスト
+│   └── architecture/   # アーキテクチャテスト（ts-arch）
 ├── security/           # セキュリティ関連知見
 ├── performance/        # パフォーマンス関連知見
 ├── readability/        # 可読性・命名関連知見
@@ -152,6 +161,16 @@ review-dojo/
 
 ## 開発
 
+### ビルド
+
+```bash
+# TypeScriptをビルド
+npm run build
+
+# 開発時の自動ビルド（ウォッチモード）
+npm run build -- --watch
+```
+
 ### テスト
 
 ```bash
@@ -163,6 +182,10 @@ npm run test:coverage
 
 # UI モード
 npm run test:ui
+
+# アーキテクチャテスト（ts-arch）
+# オニオンアーキテクチャの依存関係ルールを検証
+npm test tests/architecture
 ```
 
 ### ローカルでの動作確認
@@ -186,16 +209,90 @@ cat > sample-knowledge.json << 'EOF'
 }
 EOF
 
+# ビルド
+npm run build
+
 # 知見を適用
-node scripts/apply-knowledge.js sample-knowledge.json
+node dist/index.js sample-knowledge.json
 
 # 結果確認
 cat security/java.md
 ```
 
+## アーキテクチャ
+
+### オニオンアーキテクチャ
+
+本システムはTypeScriptで実装され、オニオンアーキテクチャ（4層）を採用しています。
+
+```
+┌─────────────────────────────────────────┐
+│     Interfaces Layer (CLI)              │  ← エントリーポイント
+│  - ApplyKnowledgeCli.ts                 │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│     Application Layer                   │  ← ユースケース
+│  - ApplyKnowledgeUseCase                │
+│  - KnowledgeArchivedHandler             │
+│  - Ports (Interfaces)                   │
+└────────────┬────────────────────────────┘
+             │
+┌────────────▼────────────────────────────┐
+│     Domain Layer (依存なし)              │  ← ビジネスロジック
+│  - Aggregates: KnowledgeFile            │
+│  - Entities: KnowledgeItem              │
+│  - Value Objects: Category, Language... │
+│  - Domain Services: SensitiveInfoMasker │
+│  - Domain Events                        │
+└─────────────────────────────────────────┘
+             ▲
+┌────────────┴────────────────────────────┐
+│     Infrastructure Layer                │  ← 外部連携
+│  - FileSystemKnowledgeRepository        │
+│  - MarkdownSerializer                   │
+└─────────────────────────────────────────┘
+```
+
+### 主要コンポーネント
+
+#### Domain Layer（ドメイン層）
+- **KnowledgeFile** (Aggregate Root): 知見ファイルの集約ルート。100件制限の管理を担当
+- **KnowledgeItem** (Entity): 個別の知見。マージ・発生回数の管理
+- **Value Objects**: Category, Language, Severity, PathComponent, CodeExample, PRReference
+- **Domain Services**: SensitiveInfoMasker（機密情報マスク）、IKnowledgeMatcher（類似判定）
+- **Domain Events**: KnowledgeAdded, KnowledgeMerged, KnowledgeArchived
+
+#### Application Layer（アプリケーション層）
+- **ApplyKnowledgeUseCase**: メインユースケース（知見の適用）
+- **KnowledgeArchivedHandler**: アーカイブイベントハンドラー
+- **Ports**: IKnowledgeRepository, IMarkdownSerializer（依存性逆転）
+
+#### Infrastructure Layer（インフラ層）
+- **FileSystemKnowledgeRepository**: ファイルシステムベースのリポジトリ実装
+- **MarkdownSerializer**: Markdown形式のシリアライズ/デシリアライズ
+
+#### Interfaces Layer（インターフェース層）
+- **ApplyKnowledgeCli**: CLIエントリーポイント
+
+### アーキテクチャ検証
+
+依存関係ルールは `ts-arch` で自動検証されます：
+
+```typescript
+// Domain層は他のレイヤーに依存しない
+// Application層はDomainのみに依存
+// Infrastructure層はInterfacesに依存しない
+```
+
+テスト実行: `npm test tests/architecture`
+
 ## ロードマップ
 
 - [x] Phase 1: MVP（収集 + 手動参照）
+  - [x] オニオンアーキテクチャ実装完了
+  - [x] TypeScript完全移行
+  - [x] アーキテクチャテスト導入（ts-arch）
 - [ ] Phase 2: 自動提案
   - MCPサーバー構築
   - Claude Code / VSCode からの参照
