@@ -1,0 +1,137 @@
+name: Check Review Knowledge
+
+# Note: Actions use version tags (@v4) instead of SHA hashes for maintainability.
+# This is standard practice for open-source projects. Consider using Dependabot
+# to keep action versions updated.
+
+on:
+  # For use in source repositories via workflow_call
+  workflow_call:
+    inputs:
+      knowledge_repo:
+        description: 'Knowledge repository (owner/repo format)'
+        required: false
+        default: 'sk8metalme/review-dojo'
+        type: string
+      knowledge_branch:
+        description: 'Knowledge repository branch'
+        required: false
+        default: 'main'
+        type: string
+    secrets:
+      KNOWLEDGE_REPO_TOKEN:
+        description: 'Token to access knowledge repository'
+        required: false
+
+jobs:
+  check-knowledge:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 required for tj-actions/changed-files to detect all changes in PRs
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          separator: ','
+          files: |
+            **/*.java
+            **/*.js
+            **/*.ts
+            **/*.jsx
+            **/*.tsx
+            **/*.py
+            **/*.go
+            **/*.php
+            **/*.rb
+            **/*.rs
+            **/*.kt
+            **/*.swift
+            **/*.c
+            **/*.cpp
+            **/*.cs
+
+      - name: Checkout knowledge repository
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.knowledge_repo }}
+          ref: ${{ inputs.knowledge_branch }}
+          path: knowledge-repo
+          token: ${{ secrets.KNOWLEDGE_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: knowledge-repo/package-lock.json
+
+      - name: Install knowledge repo dependencies
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          cd knowledge-repo
+          npm ci
+
+      - name: Build knowledge repo
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          cd knowledge-repo
+          npm run build
+
+      - name: Generate checklist
+        if: steps.changed-files.outputs.any_changed == 'true'
+        id: checklist
+        run: |
+          cd knowledge-repo
+
+          # Get changed files
+          CHANGED_FILES="${{ steps.changed-files.outputs.all_changed_files }}"
+
+          # Run check command
+          node dist/index.js check \
+            --files "$CHANGED_FILES" \
+            --format markdown \
+            --include-empty > ../checklist.md
+
+          # Save output for next step
+          cat ../checklist.md
+
+          # Check if has knowledge items
+          if grep -q "No relevant knowledge items" ../checklist.md; then
+            echo "has_knowledge=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_knowledge=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Find existing comment
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '<!-- review-dojo-checklist -->'
+
+      - name: Create or update PR comment
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: checklist.md
+          edit-mode: replace
+
+      - name: Report no changes
+        if: steps.changed-files.outputs.any_changed != 'true'
+        run: |
+          echo "ℹ️ No relevant source files changed. Skipping knowledge check."

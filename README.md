@@ -297,9 +297,10 @@ cat security/java.md
   - [x] MCPサーバー構築
   - [x] Claude Code からの参照機能
   - [x] PR作成時のチェックリスト生成
-- [ ] Phase 3: CI/CD連携
-  - Screwdriver CI/CD との統合
-  - 自動チェック・警告
+- [x] Phase 3: CI/CD連携
+  - [x] GitHub Actions ワークフロー
+  - [x] Screwdriver CI/CD 設定
+  - [x] PR自動コメント機能
 
 ## Phase 2: MCPサーバー機能
 
@@ -432,6 +433,187 @@ Claude Code: 変更ファイル一覧を取得
   → チェックリスト生成
   → PR説明欄に「セキュリティチェック」「パフォーマンスチェック」を自動挿入
 ```
+
+## Phase 3: CI/CD連携
+
+### 概要
+
+PR作成時・プッシュ時に、変更ファイルを自動的にチェックし、関連する知見をPRコメントとして投稿します。
+
+**対応CI/CD:**
+- GitHub Actions
+- Screwdriver CI/CD
+
+### GitHub Actions セットアップ
+
+#### 1. ソースリポジトリにワークフローを追加
+
+`.github/workflows/check-knowledge.yml` を作成:
+
+```yaml
+name: Check Review Knowledge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-knowledge:
+    uses: sk8metalme/review-dojo/.github/workflows/check-knowledge.yml@main
+    with:
+      knowledge_repo: 'sk8metalme/review-dojo'
+      knowledge_branch: 'main'
+    secrets:
+      KNOWLEDGE_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+#### 2. 動作
+
+1. PRが作成・更新されると自動実行
+2. 変更されたソースファイルを検出
+3. review-dojoリポジトリから知見を取得
+4. 関連する知見をPRコメントとして投稿
+5. **ノンブロッキング**: 知見が見つかっても失敗しない
+
+#### 3. PRコメント例
+
+```markdown
+## :clipboard: Review Knowledge Checklist
+
+### Summary
+- **対象言語**: java, typescript
+- **チェック項目数**: 3件
+- **重要**: 1件 | **警告**: 2件
+
+---
+
+### :rotating_light: Critical
+
+#### 1. SQLインジェクション対策
+- [ ] SQLインジェクション対策を実施しましたか？
+
+<details>
+<summary>Details</summary>
+
+- **Category**: security
+- **Knowledge ID**: `security/java/sqlインジェクション対策`
+
+</details>
+```
+
+### Screwdriver CI/CD セットアップ
+
+#### 1. screwdriver.yaml にジョブを追加
+
+```yaml
+shared:
+  image: node:20-slim
+  environment:
+    KNOWLEDGE_REPO: sk8metalme/review-dojo
+    KNOWLEDGE_BRANCH: main
+
+jobs:
+  check-knowledge:
+    requires: [~pr, ~commit]
+    annotations:
+      screwdriver.cd/ram: MICRO
+      screwdriver.cd/cpu: LOW
+    steps:
+      - install-gh: |
+          apt-get update && apt-get install -y gh git
+
+      - get-changed-files: |
+          if [ -n "$SD_PULL_REQUEST" ]; then
+            # PR mode
+            CHANGED_FILES=$(gh pr view $SD_PULL_REQUEST --json files -q '.files[].path' | tr '\n' ',')
+          else
+            # Push mode
+            CHANGED_FILES=$(git diff --name-only HEAD~1 | tr '\n' ',')
+          fi
+
+          # Filter source files only
+          FILTERED_FILES=$(echo "$CHANGED_FILES" | tr ',' '\n' | \
+            grep -E '\.(java|js|ts|jsx|tsx|py|go|php|rb|rs)$' | \
+            tr '\n' ',')
+
+          meta set changed_files "$FILTERED_FILES"
+
+      - clone-knowledge-repo: |
+          CHANGED_FILES=$(meta get changed_files)
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No relevant source files changed."
+            exit 0
+          fi
+
+          git clone --depth 1 --branch $KNOWLEDGE_BRANCH \
+            https://github.com/$KNOWLEDGE_REPO.git knowledge-repo
+
+      - generate-checklist: |
+          CHANGED_FILES=$(meta get changed_files)
+          if [ -z "$CHANGED_FILES" ]; then
+            exit 0
+          fi
+
+          cd knowledge-repo
+          npm ci
+          npm run build
+
+          node dist/index.js check \
+            --files "$CHANGED_FILES" \
+            --format markdown \
+            --include-empty > ../checklist.md
+
+      - post-pr-comment: |
+          CHANGED_FILES=$(meta get changed_files)
+          if [ -z "$CHANGED_FILES" ] || [ -z "$SD_PULL_REQUEST" ]; then
+            exit 0
+          fi
+
+          # Post or update PR comment
+          gh pr comment $SD_PULL_REQUEST --body-file ../checklist.md
+
+    secrets:
+      - GITHUB_TOKEN
+```
+
+#### 2. 必要なSecret
+
+| Secret | 説明 |
+|--------|------|
+| `GITHUB_TOKEN` | GitHub APIアクセス用トークン |
+
+### CLIコマンド（手動実行）
+
+ローカルでチェックリストを生成:
+
+```bash
+# ビルド
+npm run build
+
+# チェックリスト生成
+node dist/index.js check --files "src/UserDao.java,src/Service.ts"
+
+# 重要度フィルタ
+node dist/index.js check \
+  --files "src/UserDao.java" \
+  --severity "critical,warning"
+
+# JSON形式で出力
+node dist/index.js check \
+  --files "src/UserDao.java" \
+  --format json
+```
+
+### オプション
+
+| オプション | 説明 | デフォルト |
+|-----------|------|-----------|
+| `--files, -f` | カンマ区切りのファイルパス（必須） | - |
+| `--format` | 出力形式 (markdown \| json) | markdown |
+| `--severity` | 重要度フィルタ (critical,warning,info) | すべて |
+| `--include-empty` | 知見なしの場合も出力 | true |
+| `--knowledge-dir` | 知見ディレクトリ | カレントディレクトリ |
+| `--help, -h` | ヘルプ表示 | - |
 
 ## ライセンス
 
