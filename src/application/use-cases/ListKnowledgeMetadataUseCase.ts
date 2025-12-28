@@ -1,6 +1,5 @@
 import { IKnowledgeRepository } from '../ports/IKnowledgeRepository.js';
 import { KnowledgeSearchService } from '../../domain/services/KnowledgeSearchService.js';
-import { Category } from '../../domain/value-objects/Category.js';
 
 /**
  * カテゴリ情報DTO

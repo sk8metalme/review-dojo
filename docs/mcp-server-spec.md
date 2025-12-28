@@ -9,7 +9,7 @@ review-dojoのMCPサーバーは、蓄積されたPRレビュー知見をClaude 
 - **サーバー名**: `review-dojo`
 - **バージョン**: `2.0.0`
 - **トランスポート**: stdio
-- **エントリーポイント**: `dist/mcp-server.js`
+- **エントリーポイント**: `dist/interfaces/mcp/McpServer.js`
 
 ## 提供ツール
 
@@ -218,7 +218,7 @@ src/
   "mcpServers": {
     "review-dojo": {
       "command": "node",
-      "args": ["/path/to/review-dojo/dist/mcp-server.js"]
+      "args": ["/path/to/review-dojo/dist/interfaces/mcp/McpServer.js"]
     }
   }
 }

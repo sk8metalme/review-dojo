@@ -20,8 +20,8 @@
   ```
 - **対象ファイル例**: `src/services/UserService.js`
 - **参照PR**:
-  - https://github.com/example/repo/pull/345
-  - https://github.com/example/repo/pull/678
+  - [PR #345](https://github.com/example/repo/pull/345)
+  - [PR #678](https://github.com/example/repo/pull/678)
 
 ---
 
@@ -43,6 +43,6 @@
   ```
 - **対象ファイル例**: `src/controllers/DashboardController.js`
 - **参照PR**:
-  - https://github.com/example/repo/pull/890
+  - [PR #890](https://github.com/example/repo/pull/890)
 
 ---

@@ -147,31 +147,60 @@ export class KnowledgeSearchService {
     allKnowledge: Map<string, Map<string, KnowledgeItem[]>>,
     id: string
   ): SearchResultItem | null {
-    const [category, language, titleHash] = id.split('/');
-    if (!category || !language || !titleHash) {
+    // 入力検証: IDが文字列であることを確認
+    if (!id || typeof id !== 'string') {
       return null;
     }
 
-    const languageMap = allKnowledge.get(category);
+    // ID形式の検証: 正確に2つのスラッシュを含むことを確認
+    const idPattern = /^([^/]+)\/([^/]+)\/([^/]+)$/;
+    const match = id.trim().match(idPattern);
+
+    if (!match) {
+      return null;
+    }
+
+    const [, category, language, titleHash] = match;
+
+    // カテゴリとタイトルハッシュの検証
+    if (!category.trim() || !language.trim() || !titleHash.trim()) {
+      return null;
+    }
+
+    // カテゴリの検証: 有効なカテゴリかチェック
+    try {
+      Category.fromString(category.trim());
+    } catch (error) {
+      return null;
+    }
+
+    // 言語の検証: 有効な言語かチェック
+    try {
+      Language.fromString(language.trim());
+    } catch (error) {
+      return null;
+    }
+
+    const languageMap = allKnowledge.get(category.trim());
     if (!languageMap) {
       return null;
     }
 
-    const items = languageMap.get(language);
+    const items = languageMap.get(language.trim());
     if (!items) {
       return null;
     }
 
     // タイトルのハッシュで検索
     const item = items.find(item =>
-      this.hashTitle(item.getTitle()) === titleHash
+      this.hashTitle(item.getTitle()) === titleHash.trim()
     );
 
     if (!item) {
       return null;
     }
 
-    return { category, language, item };
+    return { category: category.trim(), language: language.trim(), item };
   }
 
   /**

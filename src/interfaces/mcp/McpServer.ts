@@ -275,6 +275,16 @@ class ReviewDojoMcpServer {
    * generate_pr_checklist ツール
    */
   private async handleGeneratePRChecklist(args: any) {
+    // 入力検証: filePathsが配列であることを確認
+    if (!Array.isArray(args.filePaths) || args.filePaths.length === 0) {
+      throw new Error('filePaths must be a non-empty array of strings');
+    }
+
+    // 各要素が文字列であることを確認
+    if (!args.filePaths.every((path: any) => typeof path === 'string' && path.trim().length > 0)) {
+      throw new Error('All filePaths must be non-empty strings');
+    }
+
     const result = await this.generatePRChecklistUseCase.execute({
       filePaths: args.filePaths,
       languages: args.languages,
