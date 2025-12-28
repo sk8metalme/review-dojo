@@ -376,23 +376,28 @@ concurrency:
 - 自動提案ロジック
 
 **完了条件:**
-- [ ] 実装中に関連知見が自動提案される
-- [ ] PR作成時にチェックリストが表示される
+- [x] 実装中に関連知見が自動提案される
+- [x] PR作成時にチェックリストが表示される
 
 ### 5.3 Phase 3: CI/CD連携
 
 **スコープ:**
 - Screwdriver CI/CD との統合
+- GitHub Actions との統合
 - パイプラインへの組み込み
-- 自動チェック・警告
+- 自動チェック・PR自動コメント
 
 **成果物:**
-- Screwdriver 連携設定
-- パイプラインジョブ
+- CheckKnowledgeCli (CLI tool)
+- ChecklistMarkdownFormatter
+- GitHub Actions reusable workflow
+- Screwdriver 連携設定ドキュメント
 
 **完了条件:**
-- [ ] CI/CDパイプラインで知見チェックが実行される
-- [ ] 違反時に警告が出力される
+- [x] CI/CDパイプラインで知見チェックが実行される
+- [x] PR自動コメント機能の実装
+- [x] GitHub Actions ワークフロー作成
+- [x] Screwdriver設定ドキュメント作成
 
 ### 5.4 テスト戦略
 
