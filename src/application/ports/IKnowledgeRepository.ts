@@ -30,4 +30,10 @@ export interface IKnowledgeRepository {
     language: Language,
     items: readonly KnowledgeItem[]
   ): Promise<void>;
+
+  /**
+   * すべての知見を読み込む（MCP検索用）
+   * @returns Map<category, Map<language, KnowledgeItem[]>>
+   */
+  findAll(): Promise<Map<string, Map<string, KnowledgeItem[]>>>;
 }

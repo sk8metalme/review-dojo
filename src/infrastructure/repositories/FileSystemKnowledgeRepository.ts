@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { KnowledgeItem } from '../../domain/entities/KnowledgeItem.js';
@@ -120,6 +120,65 @@ export class FileSystemKnowledgeRepository implements IKnowledgeRepository {
    */
   private getArchivePath(category: Category, language: Language): string {
     return join(this.baseDir, 'archive', category.getValue(), `${language.getValue()}.md`);
+  }
+
+  /**
+   * すべての知見を読み込む（MCP検索用）
+   */
+  async findAll(): Promise<Map<string, Map<string, KnowledgeItem[]>>> {
+    const result = new Map<string, Map<string, KnowledgeItem[]>>();
+
+    // baseDirが存在しない場合は空のMapを返す
+    if (!existsSync(this.baseDir)) {
+      return result;
+    }
+
+    // カテゴリディレクトリを走査
+    const entries = await readdir(this.baseDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      // archiveディレクトリはスキップ
+      if (!entry.isDirectory() || entry.name === 'archive') {
+        continue;
+      }
+
+      const categoryName = entry.name;
+      const categoryPath = join(this.baseDir, categoryName);
+
+      // カテゴリが有効かチェック
+      try {
+        const category = Category.fromString(categoryName);
+        const languageMap = new Map<string, KnowledgeItem[]>();
+
+        // カテゴリディレクトリ内の.mdファイルを走査
+        const categoryEntries = await readdir(categoryPath, { withFileTypes: true });
+
+        for (const file of categoryEntries) {
+          if (!file.isFile() || !file.name.endsWith('.md')) {
+            continue;
+          }
+
+          const languageName = file.name.replace(/\.md$/, '');
+
+          // 言語が有効かチェック
+          try {
+            const language = Language.fromString(languageName);
+            const items = await this.findByPath(category, language);
+            languageMap.set(languageName, [...items]);
+          } catch (error) {
+            console.warn(`Invalid language file: ${file.name}`, error);
+          }
+        }
+
+        if (languageMap.size > 0) {
+          result.set(categoryName, languageMap);
+        }
+      } catch (error) {
+        console.warn(`Invalid category directory: ${categoryName}`, error);
+      }
+    }
+
+    return result;
   }
 
   /**

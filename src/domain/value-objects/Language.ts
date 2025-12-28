@@ -57,4 +57,36 @@ export class Language {
   toString(): string {
     return this.value;
   }
+
+  /**
+   * ファイル拡張子から言語を推定
+   */
+  static fromExtension(extension: string): Language {
+    const ext = extension.toLowerCase().replace(/^\./, '');
+
+    const extensionMap: Record<string, string> = {
+      'java': 'java',
+      'js': 'nodejs',
+      'jsx': 'nodejs',
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'py': 'python',
+      'go': 'go',
+      'rs': 'rust',
+      'php': 'php',
+      'pl': 'perl',
+      'pm': 'perl',
+      'rb': 'ruby',
+      'cs': 'csharp',
+      'cpp': 'cpp',
+      'cc': 'cpp',
+      'cxx': 'cpp',
+      'kt': 'kotlin',
+      'kts': 'kotlin',
+      'swift': 'swift'
+    };
+
+    const language = extensionMap[ext] || 'other';
+    return Language.fromString(language);
+  }
 }

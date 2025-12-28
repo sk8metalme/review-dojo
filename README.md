@@ -293,13 +293,145 @@ cat security/java.md
   - [x] オニオンアーキテクチャ実装完了
   - [x] TypeScript完全移行
   - [x] アーキテクチャテスト導入（ts-arch）
-- [ ] Phase 2: 自動提案
-  - MCPサーバー構築
-  - Claude Code / VSCode からの参照
-  - PR作成時のチェックリスト提示
+- [x] Phase 2: 自動提案
+  - [x] MCPサーバー構築
+  - [x] Claude Code からの参照機能
+  - [x] PR作成時のチェックリスト生成
 - [ ] Phase 3: CI/CD連携
   - Screwdriver CI/CD との統合
   - 自動チェック・警告
+
+## Phase 2: MCPサーバー機能
+
+### 概要
+
+review-dojoはModel Context Protocol (MCP)サーバーを提供し、Claude Codeから蓄積された知見を直接参照できます。
+
+### セットアップ
+
+1. **ビルド**
+   ```bash
+   npm run build
+   ```
+
+2. **MCPサーバー設定（ユーザースコープ）**
+
+   **設定ファイル**: `~/.claude.json`
+
+   ```json
+   {
+     "mcpServers": {
+       "review-dojo": {
+         "command": "node",
+         "args": ["/absolute/path/to/review-dojo/dist/interfaces/mcp/McpServer.js"],
+         "env": {}
+       }
+     }
+   }
+   ```
+
+   **CLIで設定（推奨）:**
+   ```bash
+   # 対話形式
+   claude mcp add
+
+   # または、ワンライナー
+   claude mcp add --transport stdio review-dojo --scope user \
+     -- node /absolute/path/to/review-dojo/dist/interfaces/mcp/McpServer.js
+   ```
+
+   **メリット:**
+   - 全プロジェクトで利用可能
+   - 個人の設定として永続化
+   - 一度設定すればどのディレクトリからでも利用可能
+
+3. **MCP管理コマンド**
+
+   ```bash
+   # サーバー一覧
+   claude mcp list
+
+   # サーバー詳細
+   claude mcp get review-dojo
+
+   # サーバー削除
+   claude mcp remove review-dojo
+
+   # Claude Code内で状態確認
+   /mcp
+   ```
+
+### 提供ツール
+
+#### 1. search_knowledge
+蓄積された知見を検索します。
+
+```typescript
+search_knowledge({
+  query?: "SQL",              // 検索クエリ
+  category?: "security",      // カテゴリでフィルタ
+  language?: "java",          // 言語でフィルタ
+  severity?: "critical",      // 重要度でフィルタ
+  filePath?: "UserDao.java",  // ファイルパスで絞り込み
+  maxResults?: 10             // 最大結果数
+})
+```
+
+#### 2. get_knowledge_detail
+特定の知見の詳細を取得します。
+
+```typescript
+get_knowledge_detail({
+  id: "security/java/sqlインジェクション対策"
+})
+```
+
+#### 3. generate_pr_checklist
+変更ファイルから関連する知見をチェックリスト形式で生成します。
+
+```typescript
+generate_pr_checklist({
+  filePaths: ["src/UserDao.java", "src/UserService.java"],
+  languages?: ["java"],       // 省略時は自動推定
+  severityFilter?: "critical" // 重要度フィルタ
+})
+```
+
+#### 4. list_categories
+利用可能なカテゴリ一覧を取得します。
+
+```typescript
+list_categories()
+```
+
+#### 5. list_languages
+利用可能な言語一覧を取得します。
+
+```typescript
+list_languages()
+```
+
+### 使用例
+
+#### シナリオ1: 実装中の自動提案
+
+```
+ユーザー: UserDao.javaでSQL文を実装中
+Claude Code: review-dojo MCPサーバーに問い合わせ
+  → search_knowledge({ language: "java", category: "security" })
+  → セキュリティ関連の知見を発見
+  → 「SQLインジェクション対策のためPreparedStatementを使用してください」と提案
+```
+
+#### シナリオ2: PR作成時のチェックリスト
+
+```
+ユーザー: PR作成時
+Claude Code: 変更ファイル一覧を取得
+  → generate_pr_checklist({ filePaths: ["UserDao.java", "UserService.java"] })
+  → チェックリスト生成
+  → PR説明欄に「セキュリティチェック」「パフォーマンスチェック」を自動挿入
+```
 
 ## ライセンス
 
