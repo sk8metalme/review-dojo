@@ -2,6 +2,13 @@
 
 GitHub PRのレビューコメントから有益な指摘を自動収集・蓄積し、実装時に活用できる仕組み。
 
+## ドキュメント
+
+- **[クイックスタート](QUICKSTART.md)** - 5分で試す（初めての方はこちら）
+- **[統合ガイド](docs/integration-guide.md)** - 自組織への本番導入手順
+- **[トラブルシューティング](docs/troubleshooting.md)** - よくある問題と解決方法
+- **[MCP技術仕様](docs/mcp-server-spec.md)** - MCPサーバーの詳細仕様
+
 ## 概要
 
 - **目的**: PRレビューで得られた知見をチームで共有し、同じミスの再発を防止
@@ -50,40 +57,31 @@ GitHub PRのレビューコメントから有益な指摘を自動収集・蓄�
 
 ## セットアップ
 
-### 1. 必要な環境
-
-- Node.js 20+
-- GitHub Organization アカウント
-- Anthropic API Key
-
-### 2. このリポジトリのセットアップ
+### クイックスタート（ローカルで試す）
 
 ```bash
 # 依存関係のインストール
 npm install
 
+# ビルド
+npm run build
+
 # テスト実行
 npm test
 ```
 
-### 3. GitHub Secrets の設定
+詳細は **[クイックスタート](QUICKSTART.md)** を参照してください。
 
-Organization レベルで以下のSecretsを設定：
+### 本番導入（自組織への統合）
 
-| Secret名 | 用途 |
-|----------|------|
-| `ANTHROPIC_API_KEY` | Claude API 呼び出し |
-| `ORG_GITHUB_TOKEN` | org内リポジトリのPR情報取得 |
-| `KNOWLEDGE_REPO_TOKEN` | knowledge-repoへのpush |
+自組織のGitHub環境にreview-dojoを導入する場合は、**[統合ガイド](docs/integration-guide.md)** を参照してください。
 
-### 4. 各リポジトリへのワークフロー配置
-
-収集対象の各リポジトリに `.github/workflows/trigger-knowledge-collection.yml` を配置：
-
-```yaml
-# .github/workflows/trigger-knowledge-collection.yml をコピー
-# YOUR_ORG/review-dojo の部分を実際のリポジトリ名に変更
-```
+統合ガイドには以下の内容が含まれています：
+- GitHub Secretsの詳細設定手順
+- 各リポジトリへのワークフロー配置方法
+- MCPサーバーのセットアップ
+- CI/CD統合の設定
+- トラブルシューティング
 
 ## 使い方
 
