@@ -10,6 +10,7 @@ readonly KNOWLEDGE_REPO="review-dojo-knowledge"
 
 # 変数
 DRY_RUN=false
+FORCE_DELETE=false
 TARGET_ORG=""
 SPECIFIC_REPOS=""
 EXCLUDE_REPOS=""
@@ -38,6 +39,7 @@ Options:
   --repos <list>      特定のリポジトリのみを対象（カンマ区切り）
   --exclude <list>    追加で除外するリポジトリ（カンマ区切り）
   --branch <name>     作成するブランチ名（デフォルト: $DEFAULT_BRANCH_NAME）
+  --force-delete      既存ブランチを確認なしで削除
   -h, --help          このヘルプを表示
 
 Examples:
@@ -74,6 +76,10 @@ parse_args() {
         case $1 in
             --dry-run)
                 DRY_RUN=true
+                shift
+                ;;
+            --force-delete)
+                FORCE_DELETE=true
                 shift
                 ;;
             --repos)
@@ -265,10 +271,17 @@ distribute_workflow() {
         return 1
     fi
 
-    # ブランチが既に存在する場合は削除
+    # ブランチが既に存在する場合の処理
     if gh api "repos/$org/$repo/git/refs/heads/$BRANCH_NAME" &> /dev/null; then
-        warn "$org/$repo: Branch $BRANCH_NAME already exists. Deleting..."
-        gh api "repos/$org/$repo/git/refs/heads/$BRANCH_NAME" -X DELETE || true
+        if [[ "$FORCE_DELETE" == true ]]; then
+            warn "$org/$repo: Branch $BRANCH_NAME already exists. Deleting with --force-delete..."
+            gh api "repos/$org/$repo/git/refs/heads/$BRANCH_NAME" -X DELETE || true
+        else
+            warn "$org/$repo: Branch $BRANCH_NAME already exists. Skipping (use --force-delete to override)"
+            SKIP_REPOS+=("$repo (branch exists)")
+            ((SKIP_COUNT++))
+            return 0
+        fi
     fi
 
     # ブランチ作成
@@ -281,9 +294,18 @@ distribute_workflow() {
         return 1
     fi
 
-    # ワークフローファイルの内容をBase64エンコード
+    # ワークフローファイルの内容をBase64エンコード（クロスプラットフォーム対応）
     local content_base64
-    content_base64=$(base64 < "$WORKFLOW_SOURCE" | tr -d '\n')
+    if command -v openssl &> /dev/null; then
+        # opensslを優先（最も互換性が高い）
+        content_base64=$(openssl base64 -A < "$WORKFLOW_SOURCE")
+    elif base64 --help 2>&1 | grep -q -- '-w'; then
+        # Linuxのbase64で-w0オプションをサポート
+        content_base64=$(base64 -w0 < "$WORKFLOW_SOURCE")
+    else
+        # フォールバック：改行を削除
+        content_base64=$(base64 < "$WORKFLOW_SOURCE" | tr -d '\n')
+    fi
 
     # ファイル追加
     if ! gh api "repos/$org/$repo/contents/$WORKFLOW_FILE" \
