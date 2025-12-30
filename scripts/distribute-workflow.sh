@@ -11,6 +11,7 @@ readonly KNOWLEDGE_REPO="review-dojo-knowledge"
 # 変数
 DRY_RUN=false
 FORCE_DELETE=false
+DELAY_SECONDS=2
 TARGET_ORG=""
 SPECIFIC_REPOS=""
 EXCLUDE_REPOS=""
@@ -40,6 +41,8 @@ Options:
   --exclude <list>    追加で除外するリポジトリ（カンマ区切り）
   --branch <name>     作成するブランチ名（デフォルト: $DEFAULT_BRANCH_NAME）
   --force-delete      既存ブランチを確認なしで削除
+  --delay <seconds>   各リポジトリ処理後の待機時間（デフォルト: 2秒）
+  --no-delay          待機時間なし（高速モード、レート制限注意）
   -h, --help          このヘルプを表示
 
 Examples:
@@ -80,6 +83,18 @@ parse_args() {
                 ;;
             --force-delete)
                 FORCE_DELETE=true
+                shift
+                ;;
+            --delay)
+                if [[ -z "${2:-}" || "$2" == -* ]]; then
+                    error "--delay requires an argument"
+                    exit 1
+                fi
+                DELAY_SECONDS="$2"
+                shift 2
+                ;;
+            --no-delay)
+                DELAY_SECONDS=0
                 shift
                 ;;
             --repos)
@@ -427,8 +442,17 @@ main() {
     fi
 
     # 各リポジトリに配布
+    local total=${#target_repos[@]}
+    local current=0
     for repo in "${target_repos[@]}"; do
+        ((current++))
+        info "Processing repository $current/$total: $repo"
         distribute_workflow "$TARGET_ORG" "$repo" || true
+
+        # レート制限対策: 次のリポジトリ処理前に待機
+        if [[ $current -lt $total && $DELAY_SECONDS -gt 0 ]]; then
+            sleep "$DELAY_SECONDS"
+        fi
     done
 
     # サマリー表示
