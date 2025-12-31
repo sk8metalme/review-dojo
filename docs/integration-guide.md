@@ -265,7 +265,53 @@ npm test  # すべてのテストがパスすることを確認
 
 Organizationを使用している場合と個人利用の場合で手順が異なります。
 
-##### Organization を使用している場合
+##### 方法A: スクリプトで自動設定（推奨）
+
+`scripts/distribute-workflow.sh` を使用して対話型でSecretsを設定できます。
+
+**Organization を使用している場合**:
+```bash
+cd /path/to/review-dojo
+./scripts/distribute-workflow.sh --setup-secrets --org-secrets YOUR_ORG
+```
+
+**個人利用の場合**:
+```bash
+cd /path/to/review-dojo
+./scripts/distribute-workflow.sh --setup-secrets YOUR_USERNAME
+```
+
+**実行例**:
+```bash
+$ ./scripts/distribute-workflow.sh --setup-secrets --org-secrets my-org
+=========================================
+Setup Secrets
+=========================================
+Account Type: org (my-org)
+Mode: Organization Secrets
+
+Enter secrets (input will be hidden):
+  ANTHROPIC_API_KEY: ********
+  ORG_GITHUB_TOKEN: ********
+  KNOWLEDGE_REPO_TOKEN: ********
+
+Setting secrets...
+  ANTHROPIC_API_KEY      → my-org (repos: review-dojo-knowledge) ... [OK]
+  ORG_GITHUB_TOKEN       → my-org (visibility: all) ... [OK]
+  KNOWLEDGE_REPO_TOKEN   → my-org (repos: review-dojo-knowledge) ... [OK]
+
+Total: 3 configured, 0 failed
+
+Proceed to distribute workflows? [y/N]:
+```
+
+**オプション**:
+- `--dry-run`: 実際には設定せず、対象リポジトリを表示
+- `--knowledge-repo <name>`: knowledge-repoの名前を指定（デフォルト: review-dojo-knowledge）
+
+##### 方法B: 手動設定
+
+###### Organization を使用している場合
 
 1. Organization Settings → Secrets and variables → Actions
 2. 「New organization secret」をクリック
@@ -343,9 +389,63 @@ gh workflow run collect-review-knowledge.yml \
 
 ### 1.3 各リポジトリへのワークフロー配置
 
-#### 1.3.1 trigger-knowledge-collection.yml のコピー
-
 知見を収集したい各リポジトリに、トリガーワークフローを配置します。
+
+#### 1.3.1 方法A: スクリプトで自動配布（推奨）
+
+`scripts/distribute-workflow.sh` を使用して、Organization配下の全リポジトリに一括配布できます。
+
+**基本的な使い方**:
+```bash
+cd /path/to/review-dojo
+./scripts/distribute-workflow.sh YOUR_ORG
+```
+
+**dry-runで確認**:
+```bash
+./scripts/distribute-workflow.sh --dry-run YOUR_ORG
+```
+
+**特定のリポジトリのみ配布**:
+```bash
+./scripts/distribute-workflow.sh --repos "repo1,repo2,repo3" YOUR_ORG
+```
+
+**除外リポジトリを指定**:
+```bash
+./scripts/distribute-workflow.sh --exclude "private-repo,test-repo" YOUR_ORG
+```
+
+**Secrets設定とワークフロー配布を一度に実行**:
+```bash
+./scripts/distribute-workflow.sh --setup-secrets --org-secrets YOUR_ORG
+# Secrets設定後、「ワークフロー配布に進みますか？」と確認される
+```
+
+**実行結果**:
+- 各リポジトリに新しいブランチ (`add-knowledge-trigger`) を作成
+- ワークフローファイルを追加
+- PRを自動作成（mainブランチへの直接pushはしない）
+
+**利用可能なオプション**:
+| オプション | 説明 |
+|-----------|------|
+| `--dry-run` | 実際には変更せず、対象リポジトリを表示 |
+| `--repos <list>` | 特定のリポジトリのみを対象（カンマ区切り） |
+| `--exclude <list>` | 除外するリポジトリ（カンマ区切り） |
+| `--branch <name>` | 作成するブランチ名（デフォルト: add-knowledge-trigger） |
+| `--force-delete` | 既存ブランチを確認なしで削除 |
+| `--delay <seconds>` | 各リポジトリ処理後の待機時間（デフォルト: 2秒） |
+| `--no-delay` | 待機時間なし（高速モード） |
+
+**注意事項**:
+- スクリプトはmainブランチに直接pushせず、PRを作成します
+- 既に `trigger-knowledge-collection.yml` が存在するリポジトリはスキップされます
+- `review-dojo-knowledge` リポジトリは自動除外されます
+
+#### 1.3.2 方法B: 手動でコピー
+
+個別にワークフローを配置したい場合は、以下の手順で手動コピーできます。
 
 **ステップ**:
 1. 対象リポジトリのローカルクローンを作成
@@ -360,7 +460,7 @@ cp /path/to/knowledge-repo/.github/workflows/trigger-knowledge-collection.yml \
    .github/workflows/
 ```
 
-#### 1.3.2 カスタマイズ箇所
+#### 1.3.3 カスタマイズ箇所
 
 `trigger-knowledge-collection.yml` の **21行目** を編集:
 
@@ -415,7 +515,7 @@ jobs:
             }
 ```
 
-#### 1.3.3 GitHub Actions 権限設定
+#### 1.3.4 GitHub Actions 権限設定
 
 対象リポジトリで以下の権限を設定:
 
@@ -426,7 +526,7 @@ jobs:
 
 これにより、ワークフローが `repository_dispatch` イベントを送信できるようになります。
 
-#### 1.3.4 変更をコミット・プッシュ
+#### 1.3.5 変更をコミット・プッシュ
 
 ```bash
 git add .github/workflows/trigger-knowledge-collection.yml

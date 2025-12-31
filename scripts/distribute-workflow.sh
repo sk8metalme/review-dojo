@@ -16,6 +16,9 @@ TARGET_ORG=""
 SPECIFIC_REPOS=""
 EXCLUDE_REPOS=""
 BRANCH_NAME="$DEFAULT_BRANCH_NAME"
+SETUP_SECRETS=false
+ORG_SECRETS=false
+KNOWLEDGE_REPO_NAME="$KNOWLEDGE_REPO"
 
 # カウンター
 SUCCESS_COUNT=0
@@ -33,27 +36,41 @@ show_help() {
 Usage: $(basename "$0") [options] <org>
 
 GitHub organization配下のリポジトリに trigger-knowledge-collection.yml を配布します。
-mainブランチに直接pushせず、PRを作成します。
+また、GitHub Secretsを設定することもできます。
 
 Options:
-  --dry-run           実際には変更せず、対象リポジトリを表示
-  --repos <list>      特定のリポジトリのみを対象（カンマ区切り）
-  --exclude <list>    追加で除外するリポジトリ（カンマ区切り）
-  --branch <name>     作成するブランチ名（デフォルト: $DEFAULT_BRANCH_NAME）
-  --force-delete      既存ブランチを確認なしで削除
-  --delay <seconds>   各リポジトリ処理後の待機時間（デフォルト: 2秒）
-  --no-delay          待機時間なし（高速モード、レート制限注意）
-  -h, --help          このヘルプを表示
+  Workflow Distribution:
+    --dry-run           実際には変更せず、対象リポジトリを表示
+    --repos <list>      特定のリポジトリのみを対象（カンマ区切り）
+    --exclude <list>    追加で除外するリポジトリ（カンマ区切り）
+    --branch <name>     作成するブランチ名（デフォルト: $DEFAULT_BRANCH_NAME）
+    --force-delete      既存ブランチを確認なしで削除
+    --delay <seconds>   各リポジトリ処理後の待機時間（デフォルト: 2秒）
+    --no-delay          待機時間なし（高速モード、レート制限注意）
+
+  Secrets Setup:
+    --setup-secrets     Secrets設定を実行（設定後ワークフロー配布の確認あり）
+    --org-secrets       Organization Secretsとして設定（Org必須）
+    --knowledge-repo <repo>  knowledge-repoの名前（デフォルト: $KNOWLEDGE_REPO）
+
+  General:
+    -h, --help          このヘルプを表示
 
 Examples:
+  # ワークフロー配布のみ
+  $(basename "$0") sk8metalme
+
   # dry-runで確認
   $(basename "$0") --dry-run sk8metalme
 
   # 特定リポジトリのみ
   $(basename "$0") --repos "repo1,repo2" sk8metalme
 
-  # 実行
-  $(basename "$0") sk8metalme
+  # Organization Secretsを設定してから配布
+  $(basename "$0") --setup-secrets --org-secrets sk8metalme
+
+  # Repository Secretsを設定（個人用）
+  $(basename "$0") --setup-secrets my-username
 
 EOF
 }
@@ -71,6 +88,187 @@ info() {
 # 警告メッセージ
 warn() {
     echo "[WARN] $1" >&2
+}
+
+# アカウントタイプを検出（Organization or User）
+detect_account_type() {
+    local name="$1"
+
+    # Organization APIを呼び出し
+    if gh api "orgs/$name" --silent 2>/dev/null; then
+        echo "org"
+    else
+        # ユーザーとして存在するか確認
+        if gh api "users/$name" --silent 2>/dev/null; then
+            echo "user"
+        else
+            echo "unknown"
+        fi
+    fi
+}
+
+# Organization Admin権限をチェック
+check_org_admin() {
+    local org="$1"
+    local role
+    role=$(gh api "orgs/$org/memberships/$(gh api user --jq '.login')" \
+        --jq '.role' 2>/dev/null)
+
+    if [[ "$role" != "admin" ]]; then
+        error "Organization admin権限が必要です（現在: $role）"
+        error "Organization SecretsにはAdmin権限が必要です"
+        return 1
+    fi
+
+    return 0
+}
+
+# gh CLI スコープを確認
+check_gh_scopes() {
+    local scopes
+    scopes=$(gh auth status 2>&1 | grep -o "Token scopes:.*" || echo "")
+
+    if [[ "$ORG_SECRETS" == true ]]; then
+        if ! echo "$scopes" | grep -q "admin:org"; then
+            warn "admin:org スコープがありません"
+            warn "Organization Secretsを設定するには以下を実行してください:"
+            warn "  gh auth refresh -s admin:org"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+# Secret値を対話型で入力
+read_secret() {
+    local prompt="$1"
+    local var_name="$2"
+    local value
+
+    echo -n "$prompt: "
+    read -s value
+    echo  # 改行
+
+    if [[ -z "$value" ]]; then
+        error "値が入力されていません"
+        return 1
+    fi
+
+    eval "$var_name='$value'"
+    return 0
+}
+
+# 全Secrets値を入力
+prompt_secrets() {
+    echo ""
+    echo "Enter secrets (input will be hidden):"
+    echo ""
+
+    read_secret "  ANTHROPIC_API_KEY" ANTHROPIC_API_KEY_VALUE || return 1
+    read_secret "  ORG_GITHUB_TOKEN" ORG_GITHUB_TOKEN_VALUE || return 1
+    read_secret "  KNOWLEDGE_REPO_TOKEN" KNOWLEDGE_REPO_TOKEN_VALUE || return 1
+
+    echo ""
+    return 0
+}
+
+# Organization Secretsを設定
+setup_org_secrets() {
+    local org="$1"
+    local knowledge_repo="$2"
+    local failed=0
+
+    info "Setting secrets..."
+
+    # ANTHROPIC_API_KEY - knowledge-repoのみアクセス可能
+    echo -n "  ANTHROPIC_API_KEY      → $org (repos: $knowledge_repo) ... "
+    if echo "$ANTHROPIC_API_KEY_VALUE" | gh secret set ANTHROPIC_API_KEY --org "$org" --repos "$knowledge_repo" 2>/dev/null; then
+        echo "[OK]"
+    else
+        echo "[FAILED]"
+        failed=$((failed + 1))
+    fi
+
+    # ORG_GITHUB_TOKEN - 全リポジトリからアクセス可能
+    echo -n "  ORG_GITHUB_TOKEN       → $org (visibility: all) ... "
+    if echo "$ORG_GITHUB_TOKEN_VALUE" | gh secret set ORG_GITHUB_TOKEN --org "$org" --visibility all 2>/dev/null; then
+        echo "[OK]"
+    else
+        echo "[FAILED]"
+        failed=$((failed + 1))
+    fi
+
+    # KNOWLEDGE_REPO_TOKEN - knowledge-repoのみアクセス可能
+    echo -n "  KNOWLEDGE_REPO_TOKEN   → $org (repos: $knowledge_repo) ... "
+    if echo "$KNOWLEDGE_REPO_TOKEN_VALUE" | gh secret set KNOWLEDGE_REPO_TOKEN --org "$org" --repos "$knowledge_repo" 2>/dev/null; then
+        echo "[OK]"
+    else
+        echo "[FAILED]"
+        failed=$((failed + 1))
+    fi
+
+    echo ""
+    return $failed
+}
+
+# Repository Secretsを設定
+setup_repo_secrets() {
+    local owner="$1"
+    local knowledge_repo="$2"
+    shift 2
+    local repos=("$@")
+    local failed=0
+
+    info "Setting secrets..."
+
+    # knowledge-repoに全Secret設定
+    info "Setting secrets for $owner/$knowledge_repo:"
+    echo -n "  ANTHROPIC_API_KEY      → $owner/$knowledge_repo ... "
+    if echo "$ANTHROPIC_API_KEY_VALUE" | gh secret set ANTHROPIC_API_KEY -R "$owner/$knowledge_repo" 2>/dev/null; then
+        echo "[OK]"
+    else
+        echo "[FAILED]"
+        failed=$((failed + 1))
+    fi
+
+    echo -n "  ORG_GITHUB_TOKEN       → $owner/$knowledge_repo ... "
+    if echo "$ORG_GITHUB_TOKEN_VALUE" | gh secret set ORG_GITHUB_TOKEN -R "$owner/$knowledge_repo" 2>/dev/null; then
+        echo "[OK]"
+    else
+        echo "[FAILED]"
+        failed=$((failed + 1))
+    fi
+
+    echo -n "  KNOWLEDGE_REPO_TOKEN   → $owner/$knowledge_repo ... "
+    if echo "$KNOWLEDGE_REPO_TOKEN_VALUE" | gh secret set KNOWLEDGE_REPO_TOKEN -R "$owner/$knowledge_repo" 2>/dev/null; then
+        echo "[OK]"
+    else
+        echo "[FAILED]"
+        failed=$((failed + 1))
+    fi
+
+    # 他のリポジトリにはORG_GITHUB_TOKENのみ
+    if [[ ${#repos[@]} -gt 0 ]]; then
+        echo ""
+        info "Setting ORG_GITHUB_TOKEN for other repositories:"
+        for repo in "${repos[@]}"; do
+            if [[ "$repo" == "$knowledge_repo" ]]; then
+                continue
+            fi
+
+            echo -n "  ORG_GITHUB_TOKEN       → $owner/$repo ... "
+            if echo "$ORG_GITHUB_TOKEN_VALUE" | gh secret set ORG_GITHUB_TOKEN -R "$owner/$repo" 2>/dev/null; then
+                echo "[OK]"
+            else
+                echo "[FAILED]"
+                failed=$((failed + 1))
+            fi
+        done
+    fi
+
+    echo ""
+    return $failed
 }
 
 # 引数パース
@@ -124,6 +322,22 @@ parse_args() {
                     exit 1
                 fi
                 BRANCH_NAME="$2"
+                shift 2
+                ;;
+            --setup-secrets)
+                SETUP_SECRETS=true
+                shift
+                ;;
+            --org-secrets)
+                ORG_SECRETS=true
+                shift
+                ;;
+            --knowledge-repo)
+                if [[ -z "${2:-}" || "$2" == -* ]]; then
+                    error "--knowledge-repo requires an argument"
+                    exit 1
+                fi
+                KNOWLEDGE_REPO_NAME="$2"
                 shift 2
                 ;;
             -h|--help)
@@ -423,6 +637,120 @@ show_summary() {
 main() {
     parse_args "$@"
     check_gh_cli
+
+    # Secrets設定モード
+    if [[ "$SETUP_SECRETS" == true ]]; then
+        echo "========================================="
+        echo "Setup Secrets"
+        echo "========================================="
+
+        # アカウントタイプ検出
+        local account_type
+        account_type=$(detect_account_type "$TARGET_ORG")
+
+        if [[ "$account_type" == "unknown" ]]; then
+            error "Account '$TARGET_ORG' not found"
+            exit 1
+        fi
+
+        echo "Account Type: $account_type ($TARGET_ORG)"
+
+        # Org Secrets モードのバリデーション
+        if [[ "$ORG_SECRETS" == true ]]; then
+            if [[ "$account_type" != "org" ]]; then
+                error "--org-secrets requires an Organization (got: $account_type)"
+                exit 1
+            fi
+
+            echo "Mode: Organization Secrets"
+            echo ""
+
+            # スコープチェック
+            if ! check_gh_scopes; then
+                exit 1
+            fi
+
+            # Admin権限チェック
+            if ! check_org_admin "$TARGET_ORG"; then
+                exit 1
+            fi
+        else
+            echo "Mode: Repository Secrets"
+            echo ""
+        fi
+
+        # リポジトリ一覧取得
+        mapfile -t all_repos < <(get_repositories "$TARGET_ORG")
+
+        if [[ ${#all_repos[@]} -eq 0 ]]; then
+            error "No repositories found in $TARGET_ORG"
+            exit 1
+        fi
+
+        # フィルタリング
+        mapfile -t target_repos < <(filter_repositories "${all_repos[@]}")
+
+        if [[ ${#target_repos[@]} -eq 0 ]]; then
+            error "No target repositories after filtering"
+            exit 1
+        fi
+
+        # dry-runモード
+        if [[ "$DRY_RUN" == true ]]; then
+            info "DRY-RUN mode: Would configure secrets for:"
+            echo ""
+            echo "Knowledge repo:"
+            echo "  - $KNOWLEDGE_REPO_NAME"
+            echo ""
+            echo "Other repositories (ORG_GITHUB_TOKEN only):"
+            for repo in "${target_repos[@]}"; do
+                if [[ "$repo" != "$KNOWLEDGE_REPO_NAME" ]]; then
+                    echo "  - $repo"
+                fi
+            done
+            echo ""
+            exit 0
+        fi
+
+        # Secret値を入力
+        if ! prompt_secrets; then
+            error "Failed to read secrets"
+            exit 1
+        fi
+
+        # Secrets設定実行
+        local setup_failed=0
+        if [[ "$ORG_SECRETS" == true ]]; then
+            setup_org_secrets "$TARGET_ORG" "$KNOWLEDGE_REPO_NAME" || setup_failed=$?
+        else
+            setup_repo_secrets "$TARGET_ORG" "$KNOWLEDGE_REPO_NAME" "${target_repos[@]}" || setup_failed=$?
+        fi
+
+        # 結果サマリー
+        local configured=$((3 - setup_failed))
+        echo "Total: $configured configured, $setup_failed failed"
+        echo ""
+
+        if [[ $setup_failed -gt 0 ]]; then
+            error "Some secrets failed to configure"
+            exit 1
+        fi
+
+        # ワークフロー配布に進むか確認
+        echo -n "Proceed to distribute workflows? [y/N]: "
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            info "Secrets setup completed. Skipping workflow distribution."
+            exit 0
+        fi
+
+        echo ""
+        echo "========================================="
+        echo "Distribute Workflows"
+        echo "========================================="
+        echo ""
+    fi
+
     check_workflow_file
 
     if [[ "$DRY_RUN" == true ]]; then
