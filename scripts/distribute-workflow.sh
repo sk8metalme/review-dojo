@@ -107,11 +107,11 @@ warn() {
 
 # コマンド出力を配列に変換
 read_into_array() {
-    local -n arr="$1"
+    local var_name="$1"
     shift
-    arr=()
+    eval "$var_name=()"
     while IFS= read -r line; do
-        arr+=("$line")
+        eval "$var_name+=(\"\$line\")"
     done < <("$@")
 }
 
@@ -174,7 +174,6 @@ check_gh_scopes() {
 read_secret() {
     local prompt="$1"
     local var_name="$2"
-    local -n target_var="$var_name"
     local value
 
     echo -n "$prompt: "
@@ -186,7 +185,7 @@ read_secret() {
         return 1
     fi
 
-    target_var="$value"
+    eval "$var_name=\"\$value\""
     return 0
 }
 
