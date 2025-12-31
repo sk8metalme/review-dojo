@@ -213,7 +213,8 @@ npm test tests/architecture
              ▲
 ┌────────────┴────────────────────────────┐
 │     Infrastructure Layer                │  ← 外部連携
-│  - GitHubKnowledgeRepository            │
+│  - FileSystemKnowledgeRepository        │
+│  - GitHubKnowledgeRepository (optional) │
 │  - MarkdownSerializer                   │
 └─────────────────────────────────────────┘
 ```
@@ -234,7 +235,8 @@ npm test tests/architecture
 - **Ports**: IKnowledgeRepository, IMarkdownSerializer（依存性逆転）
 
 #### Infrastructure Layer（インフラ層）
-- **GitHubKnowledgeRepository**: GitHubリポジトリベースの知見リポジトリ実装
+- **FileSystemKnowledgeRepository** (デフォルト): ローカルファイルシステムベースの知見リポジトリ実装
+- **GitHubKnowledgeRepository** (オプション): GitHubリポジトリベースの知見リポジトリ実装（`REVIEW_DOJO_GITHUB_REPO`環境変数設定時に使用）
 - **MarkdownSerializer**: Markdown形式のシリアライズ/デシリアライズ
 
 #### Interfaces Layer（インターフェース層）
