@@ -57,6 +57,10 @@ cd YOUR_KNOWLEDGE_REPO
 # カテゴリディレクトリを作成
 mkdir -p security performance readability design testing error-handling other archive
 
+# 各ディレクトリに.gitkeepを作成（空ディレクトリをGitで管理するため）
+touch security/.gitkeep performance/.gitkeep readability/.gitkeep design/.gitkeep \
+      testing/.gitkeep error-handling/.gitkeep other/.gitkeep archive/.gitkeep
+
 # 初期化
 git add .
 git commit -m "chore: Initialize knowledge repository structure"
