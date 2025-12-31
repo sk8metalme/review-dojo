@@ -125,10 +125,11 @@ check_org_admin() {
 
 # gh CLI スコープを確認
 check_gh_scopes() {
-    local scopes
-    scopes=$(gh auth status 2>&1 | grep -o "Token scopes:.*" || echo "")
-
     if [[ "$ORG_SECRETS" == true ]]; then
+        local scopes
+        # gh api user -i のレスポンスヘッダーから X-OAuth-Scopes を取得
+        scopes=$(gh api user -i 2>/dev/null | grep -i '^x-oauth-scopes:' | cut -d: -f2- | tr ',' '\n' | tr -d ' ')
+
         if ! echo "$scopes" | grep -q "admin:org"; then
             warn "admin:org スコープがありません"
             warn "Organization Secretsを設定するには以下を実行してください:"
@@ -144,6 +145,7 @@ check_gh_scopes() {
 read_secret() {
     local prompt="$1"
     local var_name="$2"
+    local -n target_var="$var_name"
     local value
 
     echo -n "$prompt: "
@@ -155,7 +157,7 @@ read_secret() {
         return 1
     fi
 
-    eval "$var_name='$value'"
+    target_var="$value"
     return 0
 }
 
