@@ -1,6 +1,6 @@
 {
   "name": "review-knowledge-system",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "PR Review Knowledge Collection and Management System",
   "type": "module",
   "main": "dist/index.js",

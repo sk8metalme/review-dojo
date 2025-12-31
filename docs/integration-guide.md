@@ -27,22 +27,7 @@
 
 ## Phase 1: 知見収集システムの導入
 
-### 導入方法の選択
-
-review-dojoの知見収集システムには2つの導入方法があります：
-
-| 方法 | 概要 | メリット | デメリット |
-|------|------|---------|-----------|
-| **GitHub Action** (推奨) | review-dojo-actionを使用 | ・知見データのみ管理<br>・ビルド不要<br>・高速実行 | ・v1.0.0以降が必要 |
-| **フォーク方式** (非推奨・レガシー) | review-dojoを丸ごとフォーク | ・（apply機能は削除されました）<br>・MCP/check機能のみ | ・ビルドが必要<br>・ソースコード含む |
-
-**推奨**: 新規導入の場合は **GitHub Action方式** をご利用ください。
-
-> **Note**: review-dojoのapply機能は[review-dojo-action](https://github.com/sk8metalme/review-dojo-action)に移管されました。フォーク方式はMCP ServerとCI/CDチェック機能のみを提供します。
-
-#### GitHub Action方式のセットアップ
-
-**1. 知見リポジトリを作成**
+### 1.1 知見リポジトリを作成
 
 空のリポジトリを作成し、カテゴリディレクトリのみ初期化します：
 
@@ -67,7 +52,7 @@ git commit -m "chore: Initialize knowledge repository structure"
 git push origin main
 ```
 
-**2. 知見収集ワークフローを配置**
+### 1.2 知見収集ワークフローを配置
 
 `.github/workflows/collect-review-knowledge.yml` を作成：
 
@@ -146,74 +131,11 @@ jobs:
           git push
 ```
 
-**3. GitHub Secretsの設定**
-
-[1.2 GitHub Secrets の設定](#12-github-secrets-の設定) に進んでください。
-
-**4. 各リポジトリへのトリガー配置**
-
-[1.3 各リポジトリへのワークフロー配置](#13-各リポジトリへのワークフロー配置) に進んでください。
-
-**メリット**:
-- 知見データ（markdownファイル）のみを管理
-- `npm install`, `npm run build` が不要
-- ワークフロー実行時間が短縮（約30秒削減）
-- ソースコード管理不要
-
-**次のセクションへ**: GitHub Action方式を選択した場合、[1.2 GitHub Secrets の設定](#12-github-secrets-の設定) に進んでください。
-
 ---
 
-### 1.1 knowledge-repo のフォーク・セットアップ（フォーク方式）
+### 1.3 GitHub Secrets の設定
 
-> **注意**: この方式は既存ユーザー向けです。新規導入の場合は上記の「GitHub Action方式」を推奨します。
-
-#### 1.1.1 リポジトリのフォークまたはクローン
-
-review-dojoリポジトリをフォークまたはクローンして、自組織の知見リポジトリとして使用します。
-
-##### 方法A: GitHub UIでフォーク（推奨）
-1. [review-dojoリポジトリ](https://github.com/sk8metalme/review-dojo) にアクセス
-2. 「Fork」ボタンをクリック
-3. Organization を選択
-4. リポジトリ名を決定（例: `review-dojo`, `review-knowledge`, `pr-knowledge`）
-
-##### 方法B: クローンして新規リポジトリ作成
-```bash
-# クローン
-git clone https://github.com/sk8metalme/review-dojo.git
-cd review-dojo
-
-# リモートURLを変更
-git remote set-url origin https://github.com/YOUR_ORG/YOUR_KNOWLEDGE_REPO.git
-git push -u origin main
-```
-
-#### 1.1.2 リポジトリ名の決定
-
-以下のような命名規則を推奨します：
-- `{org-name}-review-knowledge`
-- `{org-name}-review-dojo`
-- `pr-knowledge`（シンプル）
-
-**例**:
-- `acme-review-knowledge`
-- `engineering-pr-knowledge`
-
-#### 1.1.3 セットアップ
-
-```bash
-cd your-knowledge-repo
-npm install
-npm run build
-npm test  # すべてのテストがパスすることを確認
-```
-
----
-
-### 1.2 GitHub Secrets の設定
-
-#### 1.2.1 必要なSecrets一覧
+#### 1.3.1 必要なSecrets一覧
 
 | Secret名 | スコープ | 用途 | 必要な権限 |
 |----------|----------|------|-----------|
@@ -221,7 +143,7 @@ npm test  # すべてのテストがパスすることを確認
 | `ORG_GITHUB_TOKEN` | Organization | org内リポジトリのPR情報取得 | `repo`, `read:org` |
 | `KNOWLEDGE_REPO_TOKEN` | Organization | knowledge-repoへのpush | `repo` (Contents: Write) |
 
-#### 1.2.2 Personal Access Token (PAT) の作成手順
+#### 1.3.2 Personal Access Token (PAT) の作成手順
 
 **ORG_GITHUB_TOKEN の作成**:
 
@@ -261,7 +183,7 @@ npm test  # すべてのテストがパスすることを確認
 - 定期的にローテーション
 - 使用しなくなったトークンは即座に削除
 
-#### 1.2.3 Secrets への登録手順
+#### 1.3.3 Secrets への登録手順
 
 Organizationを使用している場合と個人利用の場合で手順が異なります。
 
@@ -376,7 +298,7 @@ Secret: （作成したPATを貼り付け）
 
 > **Note**: 個人利用の場合、各リポジトリで `ORG_GITHUB_TOKEN` を設定する必要があります。複数のリポジトリで知見収集を行う場合は、各リポジトリに同じトークンを設定してください。
 
-#### 1.2.4 Secrets の動作確認
+#### 1.3.4 Secrets の動作確認
 
 ```bash
 # knowledge-repo のリポジトリで
@@ -387,11 +309,11 @@ gh workflow run collect-review-knowledge.yml \
 
 ---
 
-### 1.3 各リポジトリへのワークフロー配置
+### 1.4 各リポジトリへのワークフロー配置
 
 知見を収集したい各リポジトリに、トリガーワークフローを配置します。
 
-#### 1.3.1 方法A: スクリプトで自動配布（推奨）
+#### 1.4.1 方法A: スクリプトで自動配布（推奨）
 
 `scripts/distribute-workflow.sh` を使用して、Organization配下の全リポジトリに一括配布できます。
 
@@ -444,7 +366,7 @@ cd /path/to/review-dojo
 - 既に `trigger-knowledge-collection.yml` が存在するリポジトリはスキップされます
 - `review-dojo-knowledge` リポジトリは自動除外されます
 
-#### 1.3.2 方法B: 手動でコピー
+#### 1.4.2 方法B: 手動でコピー
 
 個別にワークフローを配置したい場合は、以下の手順で手動コピーできます。
 
@@ -461,7 +383,7 @@ cp /path/to/knowledge-repo/.github/workflows/trigger-knowledge-collection.yml \
    .github/workflows/
 ```
 
-#### 1.3.3 カスタマイズ箇所
+#### 1.4.3 カスタマイズ箇所
 
 `trigger-knowledge-collection.yml` の **21行目** を編集:
 
@@ -516,7 +438,7 @@ jobs:
             }
 ```
 
-#### 1.3.4 GitHub Actions 権限設定
+#### 1.4.4 GitHub Actions 権限設定
 
 対象リポジトリで以下の権限を設定:
 
@@ -562,7 +484,7 @@ jobs:
 
 これにより、ワークフローが `repository_dispatch` イベントを送信できるようになります。
 
-#### 1.3.5 変更をコミット・プッシュ
+#### 1.4.5 変更をコミット・プッシュ
 
 ```bash
 git add .github/workflows/trigger-knowledge-collection.yml
@@ -572,9 +494,9 @@ git push origin main
 
 ---
 
-### 1.4 動作確認
+### 1.5 動作確認
 
-#### 1.4.1 テストPRの作成・マージ
+#### 1.5.1 テストPRの作成・マージ
 
 1. 対象リポジトリでテスト用ブランチを作成
 ```bash
@@ -600,7 +522,7 @@ gh pr comment --body "SQLインジェクション対策が必要です"
 gh pr merge --squash
 ```
 
-#### 1.4.2 ワークフロー実行ログの確認
+#### 1.5.2 ワークフロー実行ログの確認
 
 **トリガーワークフローの確認** (対象リポジトリ):
 ```bash
@@ -628,7 +550,7 @@ gh run view <run-id> --log
 ✓ Commit and push changes
 ```
 
-#### 1.4.3 知見ファイルの確認
+#### 1.5.3 知見ファイルの確認
 
 knowledge-repo で知見が追加されているか確認:
 
@@ -649,22 +571,34 @@ cat security/java.md
 
 ## Phase 2: MCPサーバーの導入
 
-### 2.1 ビルドとセットアップ
+> **重要**: MCPサーバーは `review-dojo-mcp` リポジトリに含まれています。Phase 1で作成した `knowledge-repo` はmarkdownファイルのみで、MCPサーバーのコードは含まれていません。
 
-#### 2.1.1 knowledge-repo のビルド
+### 2.1 review-dojo-mcp のクローンとビルド
+
+#### 2.1.1 リポジトリのクローン
 
 ```bash
-cd /path/to/knowledge-repo
+# 適切な場所にクローン（例: ~/projects/）
+cd ~/projects
+git clone https://github.com/sk8metalme/review-dojo-mcp.git
+cd review-dojo-mcp
+```
+
+#### 2.1.2 ビルド
+
+```bash
 npm install
 npm run build
 ```
 
-#### 2.1.2 MCPサーバーの動作確認
+#### 2.1.3 MCPサーバーの動作確認
 
 ```bash
 # MCPサーバーが正常に起動するか確認
 node dist/interfaces/mcp/McpServer.js --help 2>&1 | head -20
 ```
+
+ビルド成功後、`dist/` ディレクトリにMCPサーバーのコードが生成されます。
 
 ### 2.2 Claude Code / VSCode 設定
 
@@ -680,14 +614,20 @@ claude mcp add
 # - Server name: review-dojo
 # - Transport: stdio
 # - Command: node
-# - Args: /absolute/path/to/knowledge-repo/dist/interfaces/mcp/McpServer.js
+# - Args: /absolute/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js
 # - Scope: user (全プロジェクトで利用可能)
 ```
 
 **または、ワンライナー**:
 ```bash
 claude mcp add --transport stdio review-dojo --scope user \
-  -- node /absolute/path/to/knowledge-repo/dist/interfaces/mcp/McpServer.js
+  -- node /absolute/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js
+```
+
+**例** (絶対パスで指定):
+```bash
+claude mcp add --transport stdio review-dojo --scope user \
+  -- node /Users/yourname/projects/review-dojo-mcp/dist/interfaces/mcp/McpServer.js
 ```
 
 #### 2.2.2 手動設定
@@ -699,14 +639,18 @@ claude mcp add --transport stdio review-dojo --scope user \
   "mcpServers": {
     "review-dojo": {
       "command": "node",
-      "args": ["/absolute/path/to/knowledge-repo/dist/interfaces/mcp/McpServer.js"],
-      "env": {}
+      "args": ["/absolute/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"],
+      "env": {
+        "REVIEW_DOJO_GITHUB_REPO": "YOUR_ORG/YOUR_KNOWLEDGE_REPO"
+      }
     }
   }
 }
 ```
 
-**注意**: パスは絶対パスで指定してください。
+**重要**:
+- パスは**絶対パス**で指定してください
+- `REVIEW_DOJO_GITHUB_REPO` 環境変数で、Phase 1で作成したknowledge-repoを指定します
 
 #### 2.2.3 設定の確認
 
@@ -723,7 +667,7 @@ claude mcp get review-dojo
 Name: review-dojo
 Transport: stdio
 Command: node
-Args: ["/Users/you/knowledge-repo/dist/interfaces/mcp/McpServer.js"]
+Args: ["/Users/you/projects/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"]
 Scope: user
 ```
 
@@ -733,15 +677,17 @@ Scope: user
 
 ### 2.3 知見アクセスモードの設定
 
+MCPサーバーが Phase 1 で作成した knowledge-repo の知見を参照するように設定します。
+
 #### 2.3.1 アクセスモードの種類
 
-review-dojoは複数の知見アクセスモードをサポートしています：
+review-dojo-mcp は複数の知見アクセスモードをサポートしています：
 
-| モード | 環境変数 | 用途 |
-|--------|---------|------|
-| **リモートモード** | `REVIEW_DOJO_GITHUB_REPO` | GitHub経由で知見を取得 |
-| **ローカルモード** | `REVIEW_DOJO_KNOWLEDGE_DIR` | ローカルの知見ディレクトリを参照 |
-| **デフォルトモード** | 設定なし | review-dojoリポジトリ自体の知見を参照 |
+| モード | 環境変数 | 用途 | 推奨度 |
+|--------|---------|------|--------|
+| **リモートモード** | `REVIEW_DOJO_GITHUB_REPO` | GitHub経由で知見を取得 | ⭐ 推奨 |
+| **ローカルモード** | `REVIEW_DOJO_KNOWLEDGE_DIR` | ローカルの知見ディレクトリを参照 | オフライン時 |
+| **デフォルトモード** | 設定なし | review-dojo-mcp リポジトリ自体のサンプル知見を参照 | テスト用 |
 
 #### 2.3.2 環境変数一覧
 
@@ -755,43 +701,87 @@ review-dojoは複数の知見アクセスモードをサポートしています
 
 #### 2.3.3 リモートモード設定（推奨）
 
+Phase 1で作成した knowledge-repo をGitHub経由で参照します。
+
 ```json
 {
   "mcpServers": {
     "review-dojo": {
       "command": "node",
-      "args": ["/path/to/review-dojo/dist/interfaces/mcp/McpServer.js"],
+      "args": ["/absolute/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"],
       "env": {
-        "REVIEW_DOJO_GITHUB_REPO": "your-org/knowledge-repo"
+        "REVIEW_DOJO_GITHUB_REPO": "YOUR_ORG/YOUR_KNOWLEDGE_REPO"
       }
     }
   }
 }
 ```
 
-**メリット**: 知見リポジトリのクローン不要、常に最新
+**設定例**:
+```json
+{
+  "mcpServers": {
+    "review-dojo": {
+      "command": "node",
+      "args": ["/Users/yourname/projects/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"],
+      "env": {
+        "REVIEW_DOJO_GITHUB_REPO": "acme/review-knowledge"
+      }
+    }
+  }
+}
+```
 
-**デメリット**: ネットワーク必須、API制限（5000回/時間）
+**メリット**:
+- knowledge-repo をローカルにクローンする必要がない
+- 常に最新の知見を取得
+- チームメンバー全員が同じ設定を使用可能
+
+**デメリット**:
+- ネットワーク接続が必要
+- GitHub API 制限（5000回/時間、通常は十分）
 
 #### 2.3.4 ローカルモード設定
 
+knowledge-repo をローカルにクローンして参照します。
+
 ```json
 {
   "mcpServers": {
     "review-dojo": {
       "command": "node",
-      "args": ["/path/to/review-dojo/dist/interfaces/mcp/McpServer.js"],
+      "args": ["/absolute/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"],
       "env": {
-        "REVIEW_DOJO_KNOWLEDGE_DIR": "/Users/you/knowledge-repo"
+        "REVIEW_DOJO_KNOWLEDGE_DIR": "/absolute/path/to/your-knowledge-repo"
       }
     }
   }
 }
 ```
 
-**メリット**: オフライン動作、API制限なし、高速
+**設定例**:
+```json
+{
+  "mcpServers": {
+    "review-dojo": {
+      "command": "node",
+      "args": ["/Users/yourname/projects/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"],
+      "env": {
+        "REVIEW_DOJO_KNOWLEDGE_DIR": "/Users/yourname/projects/acme-review-knowledge"
+      }
+    }
+  }
+}
+```
 
-**デメリット**: 知見更新に `git pull` が必要
+**メリット**:
+- オフライン動作
+- API制限なし
+- 高速アクセス
+
+**デメリット**:
+- knowledge-repo をローカルにクローンする必要がある
+- 知見更新に `git pull` が必要
 
 ### 2.4 MCPサーバーの使用
 
@@ -846,29 +836,37 @@ UserService.tsに関連する知見をリストして
 
 ## セットアップ手順
 
-1. knowledge-repoをクローン
+1. **review-dojo-mcp をクローン**
    \`\`\`bash
-   git clone https://github.com/YOUR_ORG/YOUR_KNOWLEDGE_REPO.git
-   cd YOUR_KNOWLEDGE_REPO
+   cd ~/projects
+   git clone https://github.com/sk8metalme/review-dojo-mcp.git
+   cd review-dojo-mcp
    npm install
    npm run build
    \`\`\`
 
-2. MCPサーバーを設定
+2. **MCPサーバーを設定**
    \`\`\`bash
+   # リモートモード（推奨）
    claude mcp add --transport stdio review-dojo --scope user \\
      -- node $(pwd)/dist/interfaces/mcp/McpServer.js
+
+   # 設定ファイルを編集して環境変数を追加
+   # ~/.claude.json に以下を追加:
+   # "env": {
+   #   "REVIEW_DOJO_GITHUB_REPO": "YOUR_ORG/YOUR_KNOWLEDGE_REPO"
+   # }
    \`\`\`
 
-3. Claude Code を再起動
+3. **Claude Code を再起動**
 
-4. 動作確認
+4. **動作確認**
    Claude Code で「Javaのセキュリティに関する知見を検索して」と質問
 ```
 
 #### 2.5.2 自動セットアップスクリプト（オプション）
 
-`scripts/setup-mcp.sh` を作成:
+`scripts/setup-mcp.sh` を review-dojo-mcp リポジトリに作成:
 
 ```bash
 #!/bin/bash
@@ -876,19 +874,26 @@ set -e
 
 echo "review-dojo MCPサーバーをセットアップします..."
 
-# ビルド
+# review-dojo-mcp をビルド
 npm install
 npm run build
 
-# MCP設定
+# MCP設定（リモートモード）
 REPO_PATH=$(pwd)
 claude mcp add --transport stdio review-dojo --scope user \
   -- node "$REPO_PATH/dist/interfaces/mcp/McpServer.js"
 
-echo "✅ セットアップ完了！Claude Codeを再起動してください。"
+echo ""
+echo "✅ セットアップ完了！"
+echo ""
+echo "次のステップ:"
+echo "1. ~/.claude.json を編集"
+echo "2. review-dojoサーバーの env セクションに以下を追加:"
+echo "   \"REVIEW_DOJO_GITHUB_REPO\": \"YOUR_ORG/YOUR_KNOWLEDGE_REPO\""
+echo "3. Claude Code を再起動"
 ```
 
-チームメンバーは以下を実行するだけ:
+チームメンバーは review-dojo-mcp リポジトリで以下を実行:
 ```bash
 ./scripts/setup-mcp.sh
 ```
@@ -1012,15 +1017,19 @@ jobs:
 
           meta set changed_files "$FILTERED_FILES"
 
-      - clone-knowledge-repo: |
+      - clone-review-dojo-mcp: |
           CHANGED_FILES=$(meta get changed_files)
           if [ -z "$CHANGED_FILES" ]; then
             echo "No relevant source files changed."
             exit 0
           fi
 
-          git clone --depth 1 --branch $KNOWLEDGE_BRANCH \
-            https://github.com/$KNOWLEDGE_REPO.git knowledge-repo
+          # review-dojo-mcp（MCPサーバー/check機能）をクローン
+          git clone --depth 1 https://github.com/sk8metalme/review-dojo-mcp.git mcp-repo
+          cd mcp-repo
+          npm ci
+          npm run build
+          cd ..
 
       - generate-checklist: |
           CHANGED_FILES=$(meta get changed_files)
@@ -1028,10 +1037,9 @@ jobs:
             exit 0
           fi
 
-          cd knowledge-repo
-          npm ci
-          npm run build
-
+          cd mcp-repo
+          # 環境変数でknowledge-repoを指定してcheck実行
+          REVIEW_DOJO_GITHUB_REPO=$KNOWLEDGE_REPO \
           node dist/index.js check \
             --files "$CHANGED_FILES" \
             --format markdown \
@@ -1048,6 +1056,10 @@ jobs:
     secrets:
       - GITHUB_TOKEN
 ```
+
+**変更点**:
+- `clone-knowledge-repo` → `clone-review-dojo-mcp`: review-dojo-mcpリポジトリをクローン
+- `generate-checklist`: 環境変数 `REVIEW_DOJO_GITHUB_REPO` でknowledge-repoを指定
 
 #### 3.2.2 必要な環境変数
 
@@ -1097,20 +1109,22 @@ review-dojoは以下のパターンを自動的にマスク:
 ## 導入チェックリスト
 
 ### Phase 1: 知見収集
-- [ ] knowledge-repo をフォーク・セットアップ
+- [ ] knowledge-repo リポジトリを作成（空のリポジトリ + カテゴリディレクトリ）
+- [ ] knowledge-repo に collect-review-knowledge.yml を配置
 - [ ] GitHub Secrets を設定（ANTHROPIC_API_KEY, ORG_GITHUB_TOKEN, KNOWLEDGE_REPO_TOKEN）
 - [ ] 対象リポジトリに trigger-knowledge-collection.yml を配置
-- [ ] trigger-knowledge-collection.yml の21行目を自組織に変更
+- [ ] trigger-knowledge-collection.yml の repository を自組織に変更
 - [ ] GitHub Actions 権限を設定（Read and write permissions）
 - [ ] テストPRで動作確認
 - [ ] knowledge-repo に知見が追加されることを確認
 
 ### Phase 2: MCPサーバー
-- [ ] knowledge-repo をビルド（npm run build）
+- [ ] review-dojo-mcp をクローン & ビルド（npm install && npm run build）
 - [ ] MCPサーバーを設定（claude mcp add）
+- [ ] 環境変数 REVIEW_DOJO_GITHUB_REPO を設定
 - [ ] Claude Code / VSCode を再起動
 - [ ] 知見検索が動作することを確認
-- [ ] チーム向けセットアップガイドを作成
+- [ ] チーム向けセットアップガイドを作成（オプション）
 
 ### Phase 3: CI/CD連携
 - [ ] 対象リポジトリに check-knowledge.yml を配置
@@ -1127,5 +1141,5 @@ review-dojoは以下のパターンを自動的にマスク:
 
 ## サポート
 
-- [GitHub Issues](https://github.com/sk8metalme/review-dojo/issues)
+- [GitHub Issues](https://github.com/sk8metalme/review-dojo-mcp/issues)
 - [README.md](../README.md)（詳細な機能説明）

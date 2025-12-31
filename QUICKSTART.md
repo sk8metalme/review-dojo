@@ -13,8 +13,8 @@
 ### 1.1 リポジトリのクローン
 
 ```bash
-git clone https://github.com/sk8metalme/review-dojo.git
-cd review-dojo
+git clone https://github.com/sk8metalme/review-dojo-mcp.git
+cd review-dojo-mcp
 ```
 
 ### 1.2 依存関係のインストールとビルド
@@ -85,7 +85,7 @@ claude mcp add review-dojo node $(pwd)/dist/interfaces/mcp/McpServer.js
   "mcpServers": {
     "review-dojo": {
       "command": "node",
-      "args": ["/path/to/review-dojo/dist/interfaces/mcp/McpServer.js"]
+      "args": ["/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"]
     }
   }
 }
@@ -109,7 +109,7 @@ claude mcp add review-dojo --scope user \
   "mcpServers": {
     "review-dojo": {
       "command": "node",
-      "args": ["/path/to/review-dojo/dist/interfaces/mcp/McpServer.js"],
+      "args": ["/path/to/review-dojo-mcp/dist/interfaces/mcp/McpServer.js"],
       "env": {
         "REVIEW_DOJO_GITHUB_REPO": "your-org/your-knowledge-repo"
       }
@@ -184,5 +184,5 @@ Phase 1-3の詳細な機能説明：
 
 問題が発生した場合：
 1. [トラブルシューティング](docs/troubleshooting.md)を確認
-2. [GitHub Issues](https://github.com/sk8metalme/review-dojo/issues)で検索
+2. [GitHub Issues](https://github.com/sk8metalme/review-dojo-mcp/issues)で検索
 3. 新規Issueを作成（再現手順を含めてください）

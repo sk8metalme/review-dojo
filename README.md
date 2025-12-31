@@ -455,19 +455,23 @@ on:
 
 jobs:
   check-knowledge:
-    uses: sk8metalme/review-dojo/.github/workflows/check-knowledge.yml@main
+    uses: YOUR_ORG/YOUR_KNOWLEDGE_REPO/.github/workflows/check-knowledge.yml@main
     with:
-      knowledge_repo: 'sk8metalme/review-dojo'
+      knowledge_repo: 'YOUR_ORG/YOUR_KNOWLEDGE_REPO'
       knowledge_branch: 'main'
     secrets:
       KNOWLEDGE_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+**カスタマイズ箇所**:
+- `YOUR_ORG/YOUR_KNOWLEDGE_REPO`: 自組織のknowledge-repoに変更
+- `knowledge_branch`: デフォルトブランチが`main`でない場合は変更
+
 #### 2. 動作
 
 1. PRが作成・更新されると自動実行
 2. 変更されたソースファイルを検出
-3. review-dojoリポジトリから知見を取得
+3. knowledge-repoから知見を取得
 4. 関連する知見をPRコメントとして投稿
 5. **ノンブロッキング**: 知見が見つかっても失敗しない
 

@@ -308,7 +308,7 @@ setup_org_permissions() {
     info "Setting Actions permissions..."
 
     echo -n "  Workflow permissions       → $org (org-level) ... "
-    if gh api "orgs/$org/actions/permissions/workflow" \
+    if gh api --silent "orgs/$org/actions/permissions/workflow" \
         -X PUT \
         -f default_workflow_permissions=write \
         -F can_approve_pull_request_reviews=true 2>/dev/null; then
@@ -331,7 +331,7 @@ setup_repo_permissions() {
 
     for repo in "${repos[@]}"; do
         echo -n "  Workflow permissions       → $owner/$repo ... "
-        if gh api "repos/$owner/$repo/actions/permissions/workflow" \
+        if gh api --silent "repos/$owner/$repo/actions/permissions/workflow" \
             -X PUT \
             -f default_workflow_permissions=write \
             -F can_approve_pull_request_reviews=true 2>/dev/null; then

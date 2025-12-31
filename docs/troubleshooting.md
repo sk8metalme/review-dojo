@@ -650,7 +650,7 @@ node dist/interfaces/mcp/McpServer.js 2>&1 | head -100
 ### 問題が解決しない場合
 
 1. **GitHub Issues で検索**
-   - [GitHub Issues](https://github.com/sk8metalme/review-dojo/issues)
+   - [GitHub Issues](https://github.com/sk8metalme/review-dojo-mcp/issues)
    - 同じ問題が報告されていないか確認
 
 2. **新規Issue作成**
@@ -663,7 +663,7 @@ node dist/interfaces/mcp/McpServer.js 2>&1 | head -100
      - 期待される動作
 
 3. **ディスカッション**
-   - [ディスカッション](https://github.com/sk8metalme/review-dojo/discussions)
+   - [ディスカッション](https://github.com/sk8metalme/review-dojo-mcp/discussions)
    - 質問・議論はこちら
 
 ### デバッグ情報の収集
