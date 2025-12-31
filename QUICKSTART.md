@@ -151,9 +151,9 @@ MCPサーバーは以下のツールを提供します：
 |--------|------|
 | `search_knowledge` | 条件で知見を検索 |
 | `get_knowledge_detail` | 知見の詳細を取得 |
+| `generate_pr_checklist` | 変更ファイルから関連知見をチェックリスト化 |
 | `list_categories` | カテゴリ一覧を取得 |
 | `list_languages` | 言語一覧を取得 |
-| `suggest_for_file` | ファイルに関連する知見を提案 |
 
 ## 次のステップ
 

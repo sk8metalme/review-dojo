@@ -119,8 +119,8 @@ PR Merged
          │
          ▼
 ┌─────────────────┐
-│ apply-knowledge │
-│ .js             │
+│ review-dojo-    │
+│ action          │
 │ Markdown更新    │
 └────────┬────────┘
          │
@@ -140,8 +140,7 @@ knowledge-repo/
 │       ├── collect-review-knowledge.yml  # メイン収集ワークフロー
 │       └── trigger-knowledge-collection.yml  # 各リポジトリ配置用
 ├── scripts/
-│   ├── collect-knowledge.md  # Claude Code用プロンプト
-│   └── apply-knowledge.js    # 知見適用スクリプト
+│   └── collect-knowledge.md  # Claude Code用プロンプト
 ├── security/           # セキュリティ関連
 │   ├── java.md
 │   ├── nodejs.md
@@ -355,12 +354,12 @@ concurrency:
 - `collect-review-knowledge.yml`
 - `trigger-knowledge-collection.yml`
 - `collect-knowledge.md`
-- `apply-knowledge.js`
+- `review-dojo-action` (別リポジトリに移管)
 
 **完了条件:**
-- [ ] org内リポジトリでPRマージ時に自動収集される
-- [ ] 知見がカテゴリ・言語別に保存される
-- [ ] 類似知見がマージされカウントされる
+- [x] org内リポジトリでPRマージ時に自動収集される
+- [x] 知見がカテゴリ・言語別に保存される
+- [x] 類似知見がマージされカウントされる
 
 ### 5.2 Phase 2: 自動提案
 
@@ -401,12 +400,15 @@ concurrency:
 
 ### 5.4 テスト戦略
 
-#### Phase 1 テスト
+#### Phase 1-3 テスト
 - **単体テスト**を作成
 - 対象:
-  - `apply-knowledge.js`: Markdown解析・更新ロジック
+  - Domain層: エンティティ、値オブジェクト、ドメインサービス
+  - Application層: ユースケース
+  - Infrastructure層: リポジトリ、シリアライザ
+  - Interface層: CLI、MCPサーバー
   - 機密情報マスク処理
-  - 知見マージ判定ロジック
+  - アーキテクチャテスト (ts-arch)
 
 #### テストフレームワーク
 - Jest または Vitest
@@ -476,3 +478,4 @@ concurrency:
 |------------|------|----------|
 | 1.0 | 2025-12-25 | 初版作成 |
 | 1.1 | 2025-12-25 | 詳細設計追加（マージ戦略、同時実行制御、エラーハンドリング、セキュリティ、品質管理、技術スタック、テスト戦略） |
+| 1.2 | 2025-12-31 | apply機能のreview-dojo-action移管を反映、Phase完了状態更新、ドキュメント整合性修正 |

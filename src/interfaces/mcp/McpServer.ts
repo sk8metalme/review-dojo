@@ -10,6 +10,11 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
 import { existsSync } from 'fs';
+import { createRequire } from 'module';
+
+// package.jsonからバージョンを読み込む
+const require = createRequire(import.meta.url);
+const packageJson = require('../../../package.json');
 
 // Use Cases
 import { SearchKnowledgeUseCase } from '../../application/use-cases/SearchKnowledgeUseCase.js';
@@ -94,7 +99,7 @@ class ReviewDojoMcpServer {
     // サーバー初期化
     this.server = new Server({
       name: 'review-dojo',
-      version: '2.0.0',
+      version: packageJson.version,
     }, {
       capabilities: {
         tools: {},

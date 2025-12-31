@@ -38,7 +38,7 @@ review-dojoの知見収集システムには2つの導入方法があります�
 
 **推奨**: 新規導入の場合は **GitHub Action方式** をご利用ください。
 
-> **Note**: review-dojoのapply機能はv2.3.0で[review-dojo-action](https://github.com/sk8metalme/review-dojo-action)に移管されました。フォーク方式はMCP ServerとCI/CDチェック機能のみを提供します。
+> **Note**: review-dojoのapply機能は[review-dojo-action](https://github.com/sk8metalme/review-dojo-action)に移管されました。フォーク方式はMCP ServerとCI/CDチェック機能のみを提供します。
 
 #### GitHub Action方式のセットアップ
 
@@ -629,9 +629,9 @@ Claude Codeが自動的にMCPサーバーの `search_knowledge` ツールを呼�
 |--------|------|-----|
 | `search_knowledge` | 条件で知見を検索 | "SQLに関する知見を探して" |
 | `get_knowledge_detail` | 知見の詳細を取得 | "security/java/SQLインジェクション対策の詳細を見せて" |
+| `generate_pr_checklist` | 変更ファイルから関連知見をチェックリスト化 | "UserDao.javaの変更に関連するチェックリストを生成" |
 | `list_categories` | カテゴリ一覧を取得 | "どんなカテゴリがある？" |
 | `list_languages` | 言語一覧を取得 | "対応している言語は？" |
-| `suggest_for_file` | ファイルに関連する知見を提案 | "UserDao.javaに関連する知見は？" |
 
 #### 2.3.3 検索クエリの例
 
