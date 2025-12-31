@@ -34,9 +34,11 @@ review-dojoの知見収集システムには2つの導入方法があります�
 | 方法 | 概要 | メリット | デメリット |
 |------|------|---------|-----------|
 | **GitHub Action** (推奨) | review-dojo-actionを使用 | ・知見データのみ管理<br>・ビルド不要<br>・高速実行 | ・v1.0.0以降が必要 |
-| **フォーク方式** | review-dojoを丸ごとフォーク | ・全機能利用可能<br>・カスタマイズ可能 | ・ビルドが必要<br>・ソースコード含む |
+| **フォーク方式** (非推奨・レガシー) | review-dojoを丸ごとフォーク | ・（apply機能は削除されました）<br>・MCP/check機能のみ | ・ビルドが必要<br>・ソースコード含む |
 
 **推奨**: 新規導入の場合は **GitHub Action方式** をご利用ください。
+
+> **Note**: review-dojoのapply機能はv2.3.0で[review-dojo-action](https://github.com/sk8metalme/review-dojo-action)に移管されました。フォーク方式はMCP ServerとCI/CDチェック機能のみを提供します。
 
 #### GitHub Action方式のセットアップ
 

@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
 import { fileURLToPath } from 'node:url';
-import { extname } from 'node:path';
-import { ApplyKnowledgeCli } from './interfaces/cli/ApplyKnowledgeCli.js';
 import { CheckKnowledgeCli } from './interfaces/cli/CheckKnowledgeCli.js';
 
 /**
  * メインエントリーポイント
+ * MCP Server と check コマンドのみを提供
  */
 async function main() {
   const args = process.argv.slice(2);
@@ -21,32 +20,13 @@ async function main() {
       break;
     }
 
-    case 'apply': {
-      // 知見の適用（既存機能）
-      const applyCli = new ApplyKnowledgeCli();
-      await applyCli.run(args.slice(1));
-      break;
-    }
-
     default: {
-      // 後方互換性: コマンドなしまたは不明なコマンドの場合は apply として扱う
-      // 第1引数がファイルパスの場合（.jsonで終わる）は apply として実行
-      const isJsonFile = command && extname(command).toLowerCase() === '.json';
-      const isFilePath = command && (
-        command.startsWith('/') ||      // POSIX absolute path
-        command.startsWith('./') ||     // Relative path (current dir)
-        command.startsWith('../') ||    // Relative path (parent dir)
-        /^[A-Za-z]:[/\\]/.test(command) // Windows absolute path (C:\, D:\, etc.)
-      );
-
-      if (isJsonFile || isFilePath) {
-        const applyCliCompat = new ApplyKnowledgeCli();
-        await applyCliCompat.run(args);
-      } else {
-        console.error('Unknown command:', command);
-        console.error('Usage: node dist/index.js <check|apply> [options]');
-        process.exit(1);
-      }
+      console.error('Unknown command:', command);
+      console.error('Usage: node dist/index.js check [options]');
+      console.error('');
+      console.error('For apply functionality, use review-dojo-action:');
+      console.error('  https://github.com/sk8metalme/review-dojo-action');
+      process.exit(1);
       break;
     }
   }

@@ -106,16 +106,11 @@ npm test
 
 ```
 review-dojo/
-├── .github/workflows/
-│   ├── collect-review-knowledge.yml    # メイン収集ワークフロー
-│   └── trigger-knowledge-collection.yml # 各リポジトリ配置用
-├── scripts/
-│   └── collect-knowledge.md            # Claude Code用プロンプト
 ├── src/                # TypeScript ソースコード（オニオンアーキテクチャ）
 │   ├── domain/         # ドメイン層（ビジネスロジック）
 │   ├── application/    # アプリケーション層（ユースケース）
 │   ├── infrastructure/ # インフラ層（ファイルI/O、シリアライズ）
-│   └── interfaces/     # インターフェース層（CLI）
+│   └── interfaces/     # インターフェース層（CLI、MCP Server）
 ├── dist/               # ビルド出力（src/のコンパイル結果）
 ├── tests/              # テストコード
 │   ├── domain/         # ドメイン層のテスト
@@ -186,37 +181,6 @@ npm run test:ui
 npm test tests/architecture
 ```
 
-### ローカルでの動作確認
-
-```bash
-# サンプルJSONを作成
-cat > sample-knowledge.json << 'EOF'
-{
-  "knowledge_items": [
-    {
-      "category": "security",
-      "language": "java",
-      "severity": "critical",
-      "title": "SQLインジェクション対策",
-      "summary": "PreparedStatementを使用していない",
-      "recommendation": "PreparedStatementを使用する",
-      "file_path": "UserDao.java",
-      "pr_url": "https://github.com/org/repo/pull/1"
-    }
-  ]
-}
-EOF
-
-# ビルド
-npm run build
-
-# 知見を適用
-node dist/index.js sample-knowledge.json
-
-# 結果確認
-cat security/java.md
-```
-
 ## アーキテクチャ
 
 ### オニオンアーキテクチャ
@@ -225,14 +189,16 @@ cat security/java.md
 
 ```text
 ┌─────────────────────────────────────────┐
-│     Interfaces Layer (CLI)              │  ← エントリーポイント
-│  - ApplyKnowledgeCli.ts                 │
+│     Interfaces Layer                    │  ← エントリーポイント
+│  - McpServer.ts (MCP Server)            │
+│  - CheckKnowledgeCli.ts (CI/CD)         │
 └────────────┬────────────────────────────┘
              │
 ┌────────────▼────────────────────────────┐
 │     Application Layer                   │  ← ユースケース
-│  - ApplyKnowledgeUseCase                │
-│  - KnowledgeArchivedHandler             │
+│  - SearchKnowledgeUseCase               │
+│  - GetKnowledgeDetailUseCase            │
+│  - GeneratePRChecklistUseCase           │
 │  - Ports (Interfaces)                   │
 └────────────┬────────────────────────────┘
              │
@@ -248,6 +214,7 @@ cat security/java.md
 ┌────────────┴────────────────────────────┐
 │     Infrastructure Layer                │  ← 外部連携
 │  - FileSystemKnowledgeRepository        │
+│  - GitHubKnowledgeRepository (optional) │
 │  - MarkdownSerializer                   │
 └─────────────────────────────────────────┘
 ```
@@ -262,16 +229,21 @@ cat security/java.md
 - **Domain Events**: KnowledgeAdded, KnowledgeMerged, KnowledgeArchived
 
 #### Application Layer（アプリケーション層）
-- **ApplyKnowledgeUseCase**: メインユースケース（知見の適用）
-- **KnowledgeArchivedHandler**: アーカイブイベントハンドラー
+- **SearchKnowledgeUseCase**: 知見検索ユースケース
+- **GetKnowledgeDetailUseCase**: 知見詳細取得ユースケース
+- **GeneratePRChecklistUseCase**: PRチェックリスト生成ユースケース
 - **Ports**: IKnowledgeRepository, IMarkdownSerializer（依存性逆転）
 
 #### Infrastructure Layer（インフラ層）
-- **FileSystemKnowledgeRepository**: ファイルシステムベースのリポジトリ実装
+- **FileSystemKnowledgeRepository** (デフォルト): ローカルファイルシステムベースの知見リポジトリ実装
+- **GitHubKnowledgeRepository** (オプション): GitHubリポジトリベースの知見リポジトリ実装（`REVIEW_DOJO_GITHUB_REPO`環境変数設定時に使用）
 - **MarkdownSerializer**: Markdown形式のシリアライズ/デシリアライズ
 
 #### Interfaces Layer（インターフェース層）
-- **ApplyKnowledgeCli**: CLIエントリーポイント
+- **McpServer**: MCP Serverエントリーポイント（Claude Code連携）
+- **CheckKnowledgeCli**: CI/CD チェックコマンド
+
+> **Note**: 知見の適用（apply）機能は [review-dojo-action](https://github.com/sk8metalme/review-dojo-action) に移管されました
 
 ### アーキテクチャ検証
 
