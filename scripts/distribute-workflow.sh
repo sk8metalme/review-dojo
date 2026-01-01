@@ -21,6 +21,7 @@ ORG_SECRETS=false
 SETUP_PERMISSIONS=false
 ORG_PERMISSIONS=false
 KNOWLEDGE_REPO_NAME="$KNOWLEDGE_REPO"
+SETUP_KNOWLEDGE_REPO=false
 
 # カウンター
 SUCCESS_COUNT=0
@@ -54,6 +55,7 @@ Options:
     --setup-secrets     Secrets設定を実行（設定後ワークフロー配布の確認あり）
     --org-secrets       Organization Secretsとして設定（Org必須）
     --knowledge-repo <repo>  knowledge-repoの名前（デフォルト: $KNOWLEDGE_REPO）
+    --setup-knowledge-repo   knowledge-repoへcollect-review-knowledge.ymlを配布
 
   Permissions Setup:
     --setup-permissions Actions権限設定を実行（設定後ワークフロー配布の確認あり）
@@ -86,6 +88,9 @@ Examples:
 
   # Secretsと権限を一緒に設定
   $(basename "$0") --setup-secrets --setup-permissions --org-secrets --org-permissions sk8metalme
+
+  # knowledge-repoへワークフロー配布
+  $(basename "$0") --setup-knowledge-repo sk8metalme
 
 EOF
 }
@@ -404,6 +409,10 @@ parse_args() {
                 fi
                 KNOWLEDGE_REPO_NAME="$2"
                 shift 2
+                ;;
+            --setup-knowledge-repo)
+                SETUP_KNOWLEDGE_REPO=true
+                shift
                 ;;
             -h|--help)
                 show_help
@@ -950,6 +959,21 @@ main() {
         echo "========================================="
         echo "Distribute Workflows"
         echo "========================================="
+        echo ""
+    fi
+
+    # knowledge-repoモードの場合、ワークフローソースとターゲットを変更
+    if [[ "$SETUP_KNOWLEDGE_REPO" == true ]]; then
+        # ワークフローファイルを変更
+        WORKFLOW_SOURCE=".github/workflows/collect-review-knowledge-template.yml"
+        WORKFLOW_FILE=".github/workflows/collect-review-knowledge.yml"
+
+        # ターゲットリポジトリをknowledge-repoのみに限定
+        SPECIFIC_REPOS="$KNOWLEDGE_REPO_NAME"
+
+        info "Knowledge-repo distribution mode enabled"
+        info "Source: $WORKFLOW_SOURCE"
+        info "Target: $KNOWLEDGE_REPO_NAME"
         echo ""
     fi
 

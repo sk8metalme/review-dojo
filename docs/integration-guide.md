@@ -303,6 +303,15 @@ cd $REVIEW_DOJO_MCP
 # Secrets設定後、「ワークフロー配布に進みますか？」と確認される
 ```
 
+**knowledge-repoへのワークフロー配布**:
+```bash
+# knowledge-repo に collect-review-knowledge.yml を配布
+./scripts/distribute-workflow.sh --setup-knowledge-repo $YOUR_ORG
+
+# knowledge-repo名をカスタマイズする場合
+./scripts/distribute-workflow.sh --setup-knowledge-repo --knowledge-repo my-knowledge-repo $YOUR_ORG
+```
+
 **実行結果**:
 - 各リポジトリに新しいブランチ (`add-knowledge-trigger`) を作成
 - ワークフローファイルを追加
@@ -319,6 +328,8 @@ cd $REVIEW_DOJO_MCP
 | `--force-delete` | 既存ブランチを確認なしで削除 |
 | `--delay <seconds>` | 各リポジトリ処理後の待機時間（デフォルト: 2秒） |
 | `--no-delay` | 待機時間なし（高速モード） |
+| `--setup-knowledge-repo` | knowledge-repoへcollect-review-knowledge.ymlを配布 |
+| `--knowledge-repo <name>` | knowledge-repoの名前を指定（デフォルト: review-dojo-knowledge） |
 
 **注意事項**:
 - スクリプトはmainブランチに直接pushせず、PRを作成します
