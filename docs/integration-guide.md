@@ -134,7 +134,7 @@ jobs:
           fi
 
       - name: Collect knowledge
-        uses: sk8metalme/review-dojo-action@v1
+        uses: sk8metalme/review-dojo-action@main
         id: collect
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
