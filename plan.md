@@ -422,7 +422,7 @@ concurrency:
 | Secret名 | スコープ | 用途 | 必要な権限 |
 |----------|----------|------|-----------|
 | `ANTHROPIC_API_KEY` | org | Claude API 呼び出し | N/A |
-| `ORG_GITHUB_TOKEN` | org | org内リポジトリのPR情報取得とknowledge-repoへのpush | 全リポジトリ: Pull requests (Read), Contents (Read)<br>knowledge-repoのみ: Actions, Contents, Workflows (Write) |
+| `ORG_GITHUB_TOKEN` | org | org内リポジトリのPR情報取得とknowledge-repoへのpush | **全Organization内リポジトリに適用**: Pull requests (Read), Contents (Read and Write), Actions (Read and Write), Workflows (Read and Write)<br>⚠️ Note: Fine-grained PATの「All repositories」モードでは全リポジトリに同じ権限が適用されます |
 
 ### 6.2 権限設計
 

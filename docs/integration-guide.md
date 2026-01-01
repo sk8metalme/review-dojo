@@ -187,22 +187,27 @@ git push origin main
    - **Token name**: `review-dojo-org-token`
    - **Expiration**: 90 days（定期的な更新を推奨）
    - **Resource owner**: Your Organization
-   - **Repository access**: All repositories
-   - **Permissions**:
-     - Repository permissions（全リポジトリに適用）:
+   - **Repository access**: **All repositories**
+   - **Permissions**（全リポジトリに適用されます）:
+     - Repository permissions:
        - `Pull requests`: Read-only（PR情報の取得に必要）
-       - `Contents`: Read-only（PR内容の取得に必要）
-       - `Metadata`: Read-only（自動付与）
-     - Repository permissions（knowledge-repoのみに適用）:
+       - `Contents`: **Read and write**（PR内容の取得とknowledge-repoへのpushに必要）
        - `Actions`: Read and write（repository_dispatch イベントのトリガーに必要）
-       - `Contents`: Read and write（知見ファイルのpushに必要）
        - `Workflows`: Read and write（ワークフローファイルの更新に必要）
+       - `Metadata`: Read-only（自動付与）
      - Organization permissions:
        - `Members`: Read-only
 4. 「Generate token」をクリック
 5. トークンをコピー（一度しか表示されません）
 
-**重要**: Fine-grained PATでは、リポジトリ単位で異なる権限を設定できます。上記の設定により、1つのトークンで安全に全ての操作を実行できます。
+**重要な注意事項**:
+- Fine-grained PATで「All repositories」を選択すると、**全てのリポジトリに同じ権限セットが適用されます**
+- つまり、Organization内の全リポジトリに`Contents: Read and write`権限が付与されます
+- **セキュリティトレードオフ**:
+  - ✅ メリット: シンプルな設定、1つのトークンのみで管理が容易
+  - ⚠️ デメリット: 全リポジトリに書き込み権限が付与される
+  - 💡 推奨: Organizationレベルで[ブランチ保護ルール](https://docs.github.com/ja/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)を設定し、mainブランチへの直接pushを防止してください
+- より厳格なセキュリティが必要な場合は、読み取り専用トークンと書き込み専用トークンを分けて管理することを検討してください
 
 **セキュリティのベストプラクティス**:
 - トークンは最小限の権限のみ付与
@@ -989,12 +994,20 @@ Screwdriver の Settings → Secrets で設定:
 
 ## セキュリティ考慮事項
 
-### Token のスコープ最小化
+### Token のスコープ設定
 
-| Token | 最小権限 |
-|-------|---------|
-| `ORG_GITHUB_TOKEN` | 全リポジトリ: `Pull requests`（read-only）, `Contents`（read-only）<br>knowledge-repoのみ: `Actions`, `Contents`, `Workflows`（read-write） |
+| Token | 権限 |
+|-------|------|
+| `ORG_GITHUB_TOKEN` | **全Organization内リポジトリに適用**:<br>`Pull requests`: Read-only<br>`Contents`: **Read and write**<br>`Actions`: Read and write<br>`Workflows`: Read and write |
 | `ANTHROPIC_API_KEY` | 必要に応じてAPI使用量制限を設定 |
+
+**重要**: Fine-grained PATの「All repositories」モードでは、選択した全リポジトリに同じ権限が適用されます。knowledge-repoのみに書き込み権限を限定することはできません。
+
+**セキュリティ強化の推奨事項**:
+- ✅ **ブランチ保護ルール**を全リポジトリに設定してmainブランチへの直接pushを防止
+- ✅ **CODEOWNERS**ファイルを設定してコードレビューを必須化
+- ✅ トークンの**有効期限を90日以内**に設定し、定期的にローテーション
+- ⚠️ より厳格なセキュリティが必要な場合は、2トークン方式（読み取り専用+書き込み専用）の使用を検討
 
 ### Private リポジトリの除外設定
 
