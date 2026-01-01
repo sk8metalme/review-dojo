@@ -115,7 +115,7 @@ jobs:
       - name: Checkout knowledge repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.KNOWLEDGE_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ORG_GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Extract PR information
@@ -854,7 +854,7 @@ jobs:
       knowledge_repo: 'YOUR_ORG/YOUR_KNOWLEDGE_REPO'
       knowledge_branch: 'main'
     secrets:
-      KNOWLEDGE_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ORG_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 **カスタマイズ箇所**:
@@ -879,7 +879,7 @@ jobs:
       knowledge_repo: 'YOUR_ORG/YOUR_KNOWLEDGE_REPO'
       knowledge_branch: 'main'
     secrets:
-      KNOWLEDGE_REPO_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
+      ORG_GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
 ```
 
 #### 3.1.3 動作確認
