@@ -109,9 +109,12 @@ on:
 **解決策**:
 1. Personal Access Tokenを再作成
 2. 必要な権限を確認:
-   - `ORG_GITHUB_TOKEN`:
-     - 全リポジトリ: `Pull requests` (Read), `Contents` (Read)
-     - knowledge-repoのみ: `Actions`, `Contents`, `Workflows` (Write)
+   - `ORG_GITHUB_TOKEN`（**全Organization内リポジトリに適用**）:
+     - `Pull requests`: Read-only
+     - `Contents`: **Read and write**
+     - `Actions`: Read and write
+     - `Workflows`: Read and write
+   - ⚠️ 注意: Fine-grained PATで「All repositories」を選択すると、全リポジトリに同じ権限が適用されます
 3. Organization Secretsを更新
 
 #### チェック5: Claude API が正常に動作しているか
