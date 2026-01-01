@@ -191,7 +191,8 @@ git push origin main
    - **Repository access**: All repositories（または対象リポジトリのみ）
    - **Permissions**:
      - Repository permissions:
-       - `Contents`: Read-only
+       - `Actions`: Read and write（repository_dispatch イベントのトリガーに必要）
+       - `Contents`: Read and write（PR情報とファイルへのアクセスに必要）
        - `Pull requests`: Read-only
        - `Metadata`: Read-only（自動付与）
      - Organization permissions:
