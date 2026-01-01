@@ -419,11 +419,10 @@ concurrency:
 
 ### 6.1 必要な Secrets
 
-| Secret名 | スコープ | 用途 |
-|----------|----------|------|
-| `ANTHROPIC_API_KEY` | org | Claude API 呼び出し |
-| `ORG_GITHUB_TOKEN` | org | org内リポジトリのPR情報取得 |
-| `KNOWLEDGE_REPO_TOKEN` | org | knowledge-repoへのpush |
+| Secret名 | スコープ | 用途 | 必要な権限 |
+|----------|----------|------|-----------|
+| `ANTHROPIC_API_KEY` | org | Claude API 呼び出し | N/A |
+| `ORG_GITHUB_TOKEN` | org | org内リポジトリのPR情報取得とknowledge-repoへのpush | **全Organization内リポジトリに適用**: Pull requests (Read and Write), Contents (Read and Write), Actions (Read and Write), Workflows (Read and Write)<br>⚠️ Note: Fine-grained PATの「All repositories」モードでは全リポジトリに同じ権限が適用されます |
 
 ### 6.2 権限設計
 
@@ -479,3 +478,4 @@ concurrency:
 | 1.0 | 2025-12-25 | 初版作成 |
 | 1.1 | 2025-12-25 | 詳細設計追加（マージ戦略、同時実行制御、エラーハンドリング、セキュリティ、品質管理、技術スタック、テスト戦略） |
 | 1.2 | 2025-12-31 | apply機能のreview-dojo-action移管を反映、Phase完了状態更新、ドキュメント整合性修正 |
+| 1.3 | 2026-01-01 | トークン統合（KNOWLEDGE_REPO_TOKEN廃止、ORG_GITHUB_TOKENに統合）、Fine-grained PATでリポジトリ単位の権限制御を実現 |

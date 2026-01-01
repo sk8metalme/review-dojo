@@ -97,7 +97,6 @@ on:
 # 以下のSecretsが存在することを確認:
 # - ANTHROPIC_API_KEY
 # - ORG_GITHUB_TOKEN
-# - KNOWLEDGE_REPO_TOKEN
 ```
 
 **よくあるミス**:
@@ -105,12 +104,17 @@ on:
 - 権限スコープ不足
 - Secret名のタイポ（`GITHUB_ORG_TOKEN` ではなく `ORG_GITHUB_TOKEN`）
 - Repository accessが適切に設定されていない
+- knowledge-repoへの書き込み権限が不足
 
 **解決策**:
 1. Personal Access Tokenを再作成
 2. 必要な権限を確認:
-   - `ORG_GITHUB_TOKEN`: `repo`, `read:org`
-   - `KNOWLEDGE_REPO_TOKEN`: `repo` (Contents: Write)
+   - `ORG_GITHUB_TOKEN`（**全Organization内リポジトリに適用**）:
+     - `Pull requests`: **Read and write**（コメント投稿に必要）
+     - `Contents`: **Read and write**
+     - `Actions`: Read and write
+     - `Workflows`: Read and write
+   - ⚠️ 注意: Fine-grained PATで「All repositories」を選択すると、全リポジトリに同じ権限が適用されます
 3. Organization Secretsを更新
 
 #### チェック5: Claude API が正常に動作しているか

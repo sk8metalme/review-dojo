@@ -197,7 +197,6 @@ prompt_secrets() {
 
     read_secret "  ANTHROPIC_API_KEY" ANTHROPIC_API_KEY_VALUE || return 1
     read_secret "  ORG_GITHUB_TOKEN" ORG_GITHUB_TOKEN_VALUE || return 1
-    read_secret "  KNOWLEDGE_REPO_TOKEN" KNOWLEDGE_REPO_TOKEN_VALUE || return 1
 
     echo ""
     return 0
@@ -223,15 +222,6 @@ setup_org_secrets() {
     # ORG_GITHUB_TOKEN - 全リポジトリからアクセス可能
     echo -n "  ORG_GITHUB_TOKEN       → $org (visibility: all) ... "
     if echo "$ORG_GITHUB_TOKEN_VALUE" | gh secret set ORG_GITHUB_TOKEN --org "$org" --visibility all 2>/dev/null; then
-        echo "[OK]"
-    else
-        echo "[FAILED]"
-        failed=$((failed + 1))
-    fi
-
-    # KNOWLEDGE_REPO_TOKEN - knowledge-repoのみアクセス可能
-    echo -n "  KNOWLEDGE_REPO_TOKEN   → $org (repos: $knowledge_repo) ... "
-    if echo "$KNOWLEDGE_REPO_TOKEN_VALUE" | gh secret set KNOWLEDGE_REPO_TOKEN --org "$org" --repos "$knowledge_repo" 2>/dev/null; then
         echo "[OK]"
     else
         echo "[FAILED]"
@@ -264,14 +254,6 @@ setup_repo_secrets() {
 
     echo -n "  ORG_GITHUB_TOKEN       → $owner/$knowledge_repo ... "
     if echo "$ORG_GITHUB_TOKEN_VALUE" | gh secret set ORG_GITHUB_TOKEN -R "$owner/$knowledge_repo" 2>/dev/null; then
-        echo "[OK]"
-    else
-        echo "[FAILED]"
-        failed=$((failed + 1))
-    fi
-
-    echo -n "  KNOWLEDGE_REPO_TOKEN   → $owner/$knowledge_repo ... "
-    if echo "$KNOWLEDGE_REPO_TOKEN_VALUE" | gh secret set KNOWLEDGE_REPO_TOKEN -R "$owner/$knowledge_repo" 2>/dev/null; then
         echo "[OK]"
     else
         echo "[FAILED]"
@@ -810,7 +792,7 @@ main() {
         fi
 
         # 結果サマリー
-        local configured=$((3 - setup_failed))
+        local configured=$((2 - setup_failed))
         echo "Total: $configured configured, $setup_failed failed"
         echo ""
 
