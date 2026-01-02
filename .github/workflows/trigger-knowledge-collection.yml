@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Note: peter-evans/repository-dispatch@v4 requires Actions Runner v2.327.1+ for self-hosted runners.
+      # This workflow uses GitHub-hosted runners (ubuntu-latest), so no runner upgrade is needed.
+      # All inputs (token, repository, event-type, client-payload) remain compatible with v4.
       - name: Send repository dispatch to knowledge-repo
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
