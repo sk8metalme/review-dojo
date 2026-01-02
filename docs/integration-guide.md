@@ -374,7 +374,10 @@ jobs:
 
     steps:
       - name: Send repository dispatch to knowledge-repo
-        uses: peter-evans/repository-dispatch@v2
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.ORG_GITHUB_TOKEN }}
           repository: acme/review-knowledge  # ← ここを変更
@@ -385,8 +388,8 @@ jobs:
               "repo_owner": "${{ github.repository_owner }}",
               "repo_name": "${{ github.event.repository.name }}",
               "pr_number": "${{ github.event.pull_request.number }}",
-              "pr_title": "${{ github.event.pull_request.title }}",
-              "merged_by": "${{ github.event.pull_request.merged_by.login }}",
+              "pr_title": ${{ toJSON(env.PR_TITLE) }},
+              "merged_by": ${{ toJSON(env.MERGED_BY) }},
               "merged_at": "${{ github.event.pull_request.merged_at }}"
             }
 ```

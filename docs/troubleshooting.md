@@ -52,7 +52,7 @@ gh run view <run-id> --log
 
 **期待される出力**:
 ```text
-Run peter-evans/repository-dispatch@v2
+Run peter-evans/repository-dispatch@v4
 ✓ Dispatched knowledge collection for PR #123
 ```
 
