@@ -3,8 +3,8 @@
 set -e
 
 # 定数
-readonly WORKFLOW_FILE=".github/workflows/trigger-knowledge-collection.yml"
-readonly WORKFLOW_SOURCE=".github/workflows/trigger-knowledge-collection.yml"
+WORKFLOW_FILE=".github/workflows/trigger-knowledge-collection.yml"
+WORKFLOW_SOURCE=".github/workflows/trigger-knowledge-collection.yml"
 readonly DEFAULT_BRANCH_NAME="add-knowledge-trigger"
 readonly KNOWLEDGE_REPO="review-dojo-knowledge"
 
